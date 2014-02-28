@@ -2,6 +2,7 @@
 
 from numpy import *
 from math import acos
+import itertools
 from itertools import izip as zip
 
 def recovery1( mesh ):
@@ -500,17 +501,18 @@ def gen_grid_laplacian2_with_boundary_reflection( rows, cols, cut_edges = None )
 
 gen_symmetric_grid_laplacian = gen_symmetric_grid_laplacian2
 
-def gen_constraint_system( rows, cols, dx_constraints, dy_constraints, add_one_absolute_constraint = False ):
+def gen_constraint_system( rows, cols, dx_constraints = [], dy_constraints = [], value_constraints = [] ):
     '''
     Given dimensions of a 'rows' by 'cols' 2D grid,
     a sequence 'dx_constraints' of tuples ( i, j, dx ) specifying the value of grid[ i+1,j ] - grid[ i,j ],
     a sequence 'dy_constraints' of tuples ( i, j, dy ) specifying the value of grid[ i,j+1 ] - grid[ i,j ],
+    a sequence 'value_constraints' of tuples ( i, j, val ) specifying the value of grid[ i,j ],
     returns two items, a matrix 'C' and an array 'Crhs', representing the constraints specified
-    by 'dx_constraints' and 'dy_constraints' in matrix form:
+    by 'dx_constraints' and 'dy_constraints' and 'value_constraints' in matrix form:
         C*dof = Crhs
     
-    If optional parameter 'add_one_absolute_constraint' is True,
-    degree-of-freedom 0 is constrained to have value 0.
+    NOTE: The constrained values dx, dy, and val can be K-dimensional vectors instead of scalars,
+          in which case Crhs will have shape #constraints-by-K.
     
     tested
     '''
@@ -525,9 +527,14 @@ def gen_constraint_system( rows, cols, dx_constraints, dy_constraints, add_one_a
     assert False not in [ i >= 0 and i < rows for i, j, dy in dy_constraints ]
     assert False not in [ j >= 0 and j < cols-1 for i, j, dy in dy_constraints ]
     
+    ## Indices for value constraints should be valid.
+    assert False not in [ i >= 0 and i < rows-1 for i, j, val in value_constraints ]
+    assert False not in [ j >= 0 and j < cols for i, j, val in value_constraints ]
+    
     ## There shouldn't be duplicate constraints.
     assert len( set( [ (i,j) for i, j, dx in dx_constraints ] ) ) == len( dx_constraints )
     assert len( set( [ (i,j) for i, j, dy in dy_constraints ] ) ) == len( dy_constraints )
+    assert len( set( [ (i,j) for i, j, val in value_constraints ] ) ) == len( value_constraints )
     
     def ij2ind( i,j ):
         assert i >= 0 and i < rows and j >= 0 and j <= cols
@@ -549,12 +556,10 @@ def gen_constraint_system( rows, cols, dx_constraints, dy_constraints, add_one_a
         vals.append( [ 1., -1. ] )
         rhs.append( dy )
     
-    if add_one_absolute_constraint:
-        ## We may be underdetermined if we don't constrain the value of a point.
-        ## Constrain zs[0] = 0.
-        indices.append( [ 0 ] )
+    for i,j,val in value_constraints:
+        indices.append( [ ij2ind( i, j ) ] )
         vals.append( [ 1. ] )
-        rhs.append( 0. )
+        rhs.append( val )
     
     assert len( indices ) == len( vals )
     assert len( indices ) == len( rhs )
@@ -839,7 +844,7 @@ def solve_grid_linear( rows, cols, dx_constraints = None, dy_constraints = None,
     tic( 'dx dy constraints:' )
     
     if len( dx_constraints ) + len( dy_constraints ) > 0:
-        C, Crhs = gen_constraint_system( rows, cols, dx_constraints, dy_constraints, add_one_absolute_constraint = ( 0 == len(value_constraints) ) )
+        C, Crhs = gen_constraint_system( rows, cols, dx_constraints, dy_constraints, [] if ( 0 < len(value_constraints) ) else [ (0,0,0.) ] )
         
         #debugger()
         ## The system to solve:
@@ -1005,6 +1010,100 @@ def solve_grid_linear_simple( rows, cols, value_constraints, bilaplacian = False
         solve_grid_linear( rows, cols, value_constraints = [ (i,j,vals[c]) for (i,j,vals) in value_constraints ], bilaplacian = bilaplacian )
         for c in xrange( list(set([len(vals) for (i,j,vals) in value_constraints]))[0] )
         ]) )
+    '''
+    
+    return result
+
+def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_constraints_soft = [], w_lsq = 1., bilaplacian = False ):
+    '''
+    Given dimensions of a 'rows' by 'cols' 2D grid,
+    a sequence 'value_constraints_hard' of tuples ( i, j, [ value1, value2, ... ] ) specifying the n-dimensional values of grid[ i,j ] as a hard constraint,
+    a sequence 'value_constraints_soft' of tuples ( i, j, [ value1, value2, ... ] ) specifying the n-dimensional values of grid[ i,j ] as a soft (least squares) constraint,
+    returns the solution to the laplace equation on the domain given by 'mesh'
+    with values given by 'value_constraints_hard', 'values_constraints_soft', and 'w_lsq'.
+    
+    If 'bilaplacian' is true, this will solve bilaplacian f = 0, and boundaries will be reflected.
+    
+    tested
+    '''
+    
+    print 'solve_grid_linear_simple2( rows = %s, cols = %s, |hard constraints| = %s, |soft constraints| = %s, w_lsq = %s, bilaplacian = %s )' % (
+        rows, cols,
+        len( value_constraints_hard ),
+        len( value_constraints_soft ),
+        w_lsq,
+        bilaplacian
+        )
+    
+    from tictoc import tic, toc
+    tic( 'build energy:' )
+    
+    ## Bi-Laplacian instead of Laplacian.
+    if bilaplacian:
+        L = gen_grid_laplacian2_with_boundary_reflection( rows, cols )
+        L = L.T*L
+    else:
+        L = gen_symmetric_grid_laplacian( rows, cols )
+    
+    toc()
+    tic( 'add constraints:' )
+    
+    system = L
+    del L
+    
+    ## We must have at least one value constraint or our system is under-constrained.
+    assert len( value_constraints_hard ) + len( value_constraints_soft ) > 0
+    ## All value constraint values should be vectors of length >= 1.
+    assert all([ len( asarray( vals ).squeeze().shape ) == 1 for ( i,j,vals ) in itertools.chain( value_constraints_hard, value_constraints_soft ) ])
+    ## All value constraint values should be vectors with the same length.
+    result_dim = list( set([ len( vals ) for ( i,j,vals ) in itertools.chain( value_constraints_hard, value_constraints_soft ) ]) )
+    assert len( result_dim ) == 1
+    result_dim = result_dim[0]
+    
+    ## Least squares weight should be non-negative:
+    assert w_lsq >= 0.
+    
+    tic( 'value constraints hard (fast):' )
+    if len( value_constraints_hard ) > 0:
+        system, rhs = system_and_rhs_with_value_constraints2_multiple_rhs( system, zeros( ( system.shape[0], result_dim ) ), value_constraints_hard, cols )
+    toc()
+    
+    tic( 'value constraints soft:' )
+    if len( value_constraints_soft ) > 0:
+        C, Crhs = gen_constraint_system( rows, cols, value_constraints = value_constraints_soft )
+        
+        #debugger()
+        ## The system to solve:
+        ## w_smooth * ( L * grid.ravel() ) + w_gradients * ( C.T * C * grid.ravel() ) = w_gradients * C.T * Crhs
+        
+        system = ( system + ( w_lsq * C.T ) * C )
+        rhs = ( ( w_lsq * C.T ) * Crhs )
+        
+        del C
+        del Crhs
+    toc()
+    
+    toc()
+    
+    import cvxopt, cvxopt.cholmod, cvxopt.umfpack
+    tic( 'convert matrix for solving:' )
+    system = system.tocoo()
+    
+    system = cvxopt.spmatrix( system.data, asarray( system.row, dtype = int ), asarray( system.col, dtype = int ) )
+    
+    toc()
+    
+    rhs = cvxopt.matrix( rhs )
+    
+    tic( 'solve system of equations direct:' )
+    cvxopt.cholmod.linsolve( system, rhs )
+    toc()
+    
+    result = array( rhs ).ravel().reshape( ( rows, cols, result_dim ) )
+    
+    ## We pass this test:
+    '''
+    assert allclose( result, solve_grid_linear_simple( rows, cols, list( itertools.chain( value_constraints_hard, value_constraints_soft ) ), bilaplacian = bilaplacian ) )
     '''
     
     return result
@@ -1648,6 +1747,38 @@ def test_cut_edges():
     print '[Saved "sol_mask_tilted_connected.png".]'
     heightmesh.save_grid_as_OBJ( sol_mask_tilted_connected, 'sol_mask_tilted_connected.obj' )
 
+def test_solve_grid_linear_simple2():
+    what = 'large'
+    if what == 'large':
+        rows = 250
+        cols = 250
+        br0 = 100
+        br1 = 150
+        bc0 = br0
+        bc1 = br1
+    elif what == 'small':
+        rows = 9
+        cols = 9
+        br0 = 3
+        br1 = 6
+        bc0 = br0
+        bc1 = br1
+    else:
+        raise RuntimeError, "what"
+    
+    from helpers import normalize_to_char_img
+    import Image
+    import heightmesh
+    
+    sol_hard = solve_grid_linear_simple2( rows, cols, value_constraints_hard = [ ( 0, 0, 0. ), ( rows-1, 0, 0. ), ( 0, cols-1, 0. ), ( rows-1, cols-1, 0. ), ], bilaplacian = True )
+    sol_soft = solve_grid_linear_simple2( rows, cols, value_constraints_soft = [ ( 0, 0, 0. ), ( rows-1, 0, 0. ), ( 0, cols-1, 0. ), ( rows-1, cols-1, 0. ), ], w_lsq = 1e3, bilaplacian = True )
+    
+    Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_hard.png' )
+    Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_soft.png' )
+    print '[Saved "sol_soft.png".]'
+    print '[Saved "sol_hard.png".]'
+    #heightmesh.save_grid_as_OBJ( sol_nomask, 'sol_hard.obj' )
+
 def debug_matrix_rank( M ):
     print linalg.svd( M.todense() )[1] > 1e-10
 def view_grid( grid ):
@@ -1668,6 +1799,9 @@ def view_grid( grid ):
 def main():
     import sys
     from trimesh import TriMesh
+    
+    test_solve_grid_linear_simple2()
+    sys.exit(0)
     
     test_cut_edges()
     sys.exit(0)
