@@ -3,17 +3,6 @@
 from numpy import *
 from itertools import izip as zip
 
-try:
-    from pydb import debugger
-    
-    ## Also add an exception hook.
-    import pydb, sys
-    sys.excepthook = pydb.exception_hook
-    
-except ImportError:
-    def debugger():
-        print '==== Eek, no debugger()! ===='
-
 def save_grid_as_OBJ( grid, objpath, four_eight = False, mask = None ):
     mesh = grid2trimesh( grid, four_eight = four_eight, mask = mask )
     print '[Generated %s triangle mesh.]' % ( 'four-eight' if four_eight else 'regular', )

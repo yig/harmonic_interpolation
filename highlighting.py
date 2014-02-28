@@ -372,7 +372,6 @@ def array_tinting_region_border_with_falloff( img, regions, colors, alpha ):
     while a value of 'alpha' = 0 means no tinting occurs.
     '''
     
-    from pydb import debugger
     #debugger()
     
     assert img.dtype == uint8

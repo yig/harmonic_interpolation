@@ -1,13 +1,8 @@
-#!/usr/bin/python2.5
+#!/usr/bin/env python
 
 from numpy import *
 from math import acos
 from itertools import izip as zip
-
-try:
-    from pydb import debugger
-except ImportError:
-    from pydbgr.api import debug as debugger
 
 def recovery1( mesh ):
     ## 1 Take only front-facing triangles of the mesh.
@@ -1291,7 +1286,6 @@ def convert_grid_normal_constraints_to_dx_and_dy_constraints( rows, cols, normal
     return dx_constraints, dy_constraints
 
 def test_grid_poisson():
-    from pydb import debugger
     #result = solve_grid_linear( 3, 3, [(1,0,1.),(1,1,1.),(1,2,1.)], [(0,1,0.),(1,1,0.),(2,1,0.)] )
     
     print 'laplacian:'

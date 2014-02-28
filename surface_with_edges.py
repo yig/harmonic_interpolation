@@ -3,7 +3,6 @@ import Image
 from helpers import *
 import helpers
 import recovery
-from pydb import debugger
 
 def edge_mask2edges( edge_mask ):
     '''
