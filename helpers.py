@@ -126,7 +126,9 @@ def normalize_image( img ):
         img = asarray( img, dtype = float )
     
     img = img.squeeze()
-    assert len( img.shape ) == 2
+    ## For greyscale, shape should be 2, but for color it could be 3.
+    #assert len( img.shape ) == 2
+    assert len( img.shape ) in (2,3)
     
     min_val = img.min()
     max_val = img.max()

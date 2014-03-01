@@ -1768,9 +1768,11 @@ def test_solve_grid_linear_simple2():
     import Image
     import heightmesh
     
+    ## This works with K = 1 or K = 3.
+    K = 1
     value_constraints = [
-        ( 0, 0, [0.] ), ( rows-1, 0, [0.] ), ( 0, cols-1, [0.] ), ( rows-1, cols-1, [0.] ),
-        ( br0, bc0, [br0] ), ( br1-1, bc0, [br0] ), ( br0, bc1-1, [br0] ), ( br1-1, bc1-1, [br0] )
+        ( 0, 0, [0.]*K ), ( rows-1, 0, [0.]*K ), ( 0, cols-1, [0.]*K ), ( rows-1, cols-1, [0.]*K ),
+        ( br0, bc0, [br0]*K ), ( br1-1, bc0, [br0]*K ), ( br0, bc1-1, [br0]*K ), ( br1-1, bc1-1, [br0]*K )
         ]
     
     sol_hard = solve_grid_linear_simple2( rows, cols, value_constraints_hard = value_constraints, bilaplacian = True )
