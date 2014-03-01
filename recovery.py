@@ -528,7 +528,7 @@ def gen_constraint_system( rows, cols, dx_constraints = [], dy_constraints = [],
     assert False not in [ j >= 0 and j < cols-1 for i, j, dy in dy_constraints ]
     
     ## Indices for value constraints should be valid.
-    assert False not in [ i >= 0 and i < rows-1 for i, j, val in value_constraints ]
+    assert False not in [ i >= 0 and i < rows for i, j, val in value_constraints ]
     assert False not in [ j >= 0 and j < cols for i, j, val in value_constraints ]
     
     ## There shouldn't be duplicate constraints.
@@ -976,7 +976,7 @@ def solve_grid_linear_simple( rows, cols, value_constraints, bilaplacian = False
     ## We must have at least one value constraint or our system is under-constrained.
     assert len( value_constraints ) > 0
     ## All value constraint values should be vectors of length >= 1.
-    assert all([ len( asarray( vals ).squeeze().shape ) == 1 for ( i,j,vals ) in value_constraints ])
+    assert all([ len( asarray( vals ).shape ) == 1 for ( i,j,vals ) in value_constraints ])
     ## All value constraint values should be vectors with the same length.
     result_dim = list( set([ len( vals ) for ( i,j,vals ) in value_constraints ]) )
     assert len( result_dim ) == 1
@@ -1054,7 +1054,7 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
     ## We must have at least one value constraint or our system is under-constrained.
     assert len( value_constraints_hard ) + len( value_constraints_soft ) > 0
     ## All value constraint values should be vectors of length >= 1.
-    assert all([ len( asarray( vals ).squeeze().shape ) == 1 for ( i,j,vals ) in itertools.chain( value_constraints_hard, value_constraints_soft ) ])
+    assert all([ len( asarray( vals ).shape ) == 1 for ( i,j,vals ) in itertools.chain( value_constraints_hard, value_constraints_soft ) ])
     ## All value constraint values should be vectors with the same length.
     result_dim = list( set([ len( vals ) for ( i,j,vals ) in itertools.chain( value_constraints_hard, value_constraints_soft ) ]) )
     assert len( result_dim ) == 1
@@ -1101,10 +1101,8 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
     
     result = array( rhs ).ravel().reshape( ( rows, cols, result_dim ) )
     
-    ## We pass this test:
-    '''
-    assert allclose( result, solve_grid_linear_simple( rows, cols, list( itertools.chain( value_constraints_hard, value_constraints_soft ) ), bilaplacian = bilaplacian ) )
-    '''
+    ## We pass this test (with default epsilon with hard constraints, and within 1e-4 when w_lsq = 1e3):
+    #assert allclose( result, solve_grid_linear_simple( rows, cols, list( itertools.chain( value_constraints_hard, value_constraints_soft ) ), bilaplacian = bilaplacian ) )
     
     return result
 
@@ -1770,8 +1768,13 @@ def test_solve_grid_linear_simple2():
     import Image
     import heightmesh
     
-    sol_hard = solve_grid_linear_simple2( rows, cols, value_constraints_hard = [ ( 0, 0, 0. ), ( rows-1, 0, 0. ), ( 0, cols-1, 0. ), ( rows-1, cols-1, 0. ), ], bilaplacian = True )
-    sol_soft = solve_grid_linear_simple2( rows, cols, value_constraints_soft = [ ( 0, 0, 0. ), ( rows-1, 0, 0. ), ( 0, cols-1, 0. ), ( rows-1, cols-1, 0. ), ], w_lsq = 1e3, bilaplacian = True )
+    value_constraints = [
+        ( 0, 0, [0.] ), ( rows-1, 0, [0.] ), ( 0, cols-1, [0.] ), ( rows-1, cols-1, [0.] ),
+        ( br0, bc0, [br0] ), ( br1-1, bc0, [br0] ), ( br0, bc1-1, [br0] ), ( br1-1, bc1-1, [br0] )
+        ]
+    
+    sol_hard = solve_grid_linear_simple2( rows, cols, value_constraints_hard = value_constraints, bilaplacian = True )
+    sol_soft = solve_grid_linear_simple2( rows, cols, value_constraints_soft = value_constraints, w_lsq = 1e3, bilaplacian = True )
     
     Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_hard.png' )
     Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_soft.png' )

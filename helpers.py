@@ -125,6 +125,7 @@ def normalize_image( img ):
     if img.dtype.kind != 'f':
         img = asarray( img, dtype = float )
     
+    img = img.squeeze()
     assert len( img.shape ) == 2
     
     min_val = img.min()
