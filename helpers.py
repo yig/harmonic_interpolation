@@ -38,6 +38,8 @@ def color_spiral( i, N ):
 def isiterable( a ):
     '''
     Returns True is 'a' is iterable, False otherwise.
+    
+    This can be written as an expression as: hasattr( a, '__iter__' )
     '''
     ## http://bytes.com/forum/thread514838.html
     try:
