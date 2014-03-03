@@ -1670,6 +1670,42 @@ def test_shape_operator():
     #debugger()
     #pass
 
+def normalize_image( img ):
+    '''
+    Given a 2D array, linearly maps the smallest value to 0 and the largest value to 1.
+    '''
+    
+    ## Convert to a floating point array because of the division.
+    if img.dtype.kind != 'f':
+        img = asarray( img, dtype = float )
+    
+    img = img.squeeze()
+    ## For greyscale, shape should be 2, but for color it could be 3.
+    #assert len( img.shape ) == 2
+    assert len( img.shape ) in (2,3)
+    
+    min_val = img.min()
+    max_val = img.max()
+    result = ( img - min_val ) / ( max_val - min_val )
+    return result
+
+def float_img2char_img( img ):
+    '''
+    Given a 2D array representing an image with values from 0 to 1, returns a uint8 image ranging from 0 to 255.
+    '''
+    
+    ## Specifying dtype=uint8 is crucial, otherwise the png came out as garbage.
+    result = asarray( ( 255.*img ).clip( 0, 255 ).round(), dtype = uint8 )
+    return result
+
+def normalize_to_char_img( img ):
+    '''
+    Given a 2D array representing an image, returns a uint8 array representing
+    the image after linearly mapping the values to lie within the
+    range [0,255].
+    '''
+    return float_img2char_img( normalize_image( img ) )
+
 def test_cut_edges():
     what = 'large'
     if what == 'large':
@@ -1703,7 +1739,6 @@ def test_cut_edges():
     dys.extend([ ( row, bc0, 1. ) for row in xrange( br0, br1 ) ])
     dys.extend([ ( row, bc1-2, -1. ) for row in xrange( br0, br1 ) ])
     
-    from helpers import normalize_to_char_img
     import Image
     import heightmesh
     
@@ -1766,7 +1801,6 @@ def test_solve_grid_linear_simple2():
     else:
         raise RuntimeError, "what"
     
-    from helpers import normalize_to_char_img
     import Image
     import heightmesh
     

@@ -1,7 +1,5 @@
 from numpy import *
 import Image
-from helpers import *
-import helpers
 import recovery
 
 def edge_mask2edges( edge_mask ):
@@ -51,6 +49,8 @@ def edge_mask2edges( edge_mask ):
     return cut_edges
 
 def main():
+    import surface_with_edges_helpers as helpers
+    
     ### Globals ###
     #centroids2normals_path = 'HITs3-normal_map_viz.centroids2normals'
     centroids2normals_path = 'HITs3-siga-normal_map_viz.centroids2normals'
@@ -71,7 +71,7 @@ def main():
     
     ### Load files ###
     
-    rows, cols = friendly_Image_open_asarray( image_path ).shape[:2]
+    rows, cols = helpers.friendly_Image_open_asarray( image_path ).shape[:2]
     
     dx = []
     dy = []
@@ -80,7 +80,7 @@ def main():
     
     mask = None
     if mask_path is not None:
-        mask = friendly_Image_open_asarray( mask_path ).astype( bool )
+        mask = helpers.friendly_Image_open_asarray( mask_path ).astype( bool )
         assert len( mask.shape ) in (2,3)
         if len( mask.shape ) == 3:
             mask = mask.any( axis = 2 )
@@ -98,8 +98,6 @@ def main():
             value_constraints = [ ( r[0][0], r[1][0], 0. ) for r in regions ]
     
     ignore_mask = zeros( ( rows, cols ), dtype = bool )
-    discontinuous_edges = None
-    disconnected_edges = None
     if cut_edges_mask_path is not None:
         cut_edges_mask = friendly_Image_open_asarray( cut_edges_mask_path )
         disconnected_mask = ( cut_edges_mask == ( 255, 0, 0 ) ).all( axis = 2 )
@@ -180,7 +178,7 @@ def main():
     numpy.save( output_npy_path_surface, nmap )
     print '[Saved surface depth map as a numpy array to "%s".]' % (output_npy_path_surface,)
     
-    nmap_arr = helpers.normalize_to_char_img( nmap )
+    nmap_arr = recovery.normalize_to_char_img( nmap )
     nmap_img = Image.fromarray( nmap_arr )
     nmap_img.save( output_image_path_surface )
     print '[Saved surface depth map as an image to "%s".]' % (output_image_path_surface,)
