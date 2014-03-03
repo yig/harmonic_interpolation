@@ -1060,6 +1060,9 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
     assert len( result_dim ) == 1
     result_dim = result_dim[0]
     
+    ## Initialize the right-hand-side
+    rhs = zeros( ( system.shape[0], result_dim ) )
+    
     ## Least squares weight should be non-negative:
     assert w_lsq >= 0.
     
@@ -1072,7 +1075,7 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
         ## w_smooth * ( L * grid.ravel() ) + w_gradients * ( C.T * C * grid.ravel() ) = w_gradients * C.T * Crhs
         
         system = ( system + ( w_lsq * C.T ) * C )
-        rhs = ( ( w_lsq * C.T ) * Crhs )
+        rhs = ( rhs + ( w_lsq * C.T ) * Crhs )
         
         del C
         del Crhs
@@ -1082,7 +1085,7 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
     ##       the hard constraints set certain rows and columns to identity rows and columns.
     tic( 'value constraints hard (fast):' )
     if len( value_constraints_hard ) > 0:
-        system, rhs = system_and_rhs_with_value_constraints2_multiple_rhs( system, zeros( ( system.shape[0], result_dim ) ), value_constraints_hard, cols )
+        system, rhs = system_and_rhs_with_value_constraints2_multiple_rhs( system, rhs, value_constraints_hard, cols )
     toc()
     
     toc()
@@ -1813,11 +1816,14 @@ def test_solve_grid_linear_simple2():
     
     sol_hard = solve_grid_linear_simple2( rows, cols, value_constraints_hard = value_constraints, bilaplacian = True )
     sol_soft = solve_grid_linear_simple2( rows, cols, value_constraints_soft = value_constraints, w_lsq = 1e3, bilaplacian = True )
+    sol_mixed = solve_grid_linear_simple2( rows, cols, value_constraints_hard = value_constraints, value_constraints_soft = [ ( (br0+br1)//2, (bc0+bc1)//2, [.5*br0]*K ) ], w_lsq = 1e3, bilaplacian = True )
     
     Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_hard.png' )
     Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_soft.png' )
+    Image.fromarray( normalize_to_char_img( sol_mixed ) ).save( 'sol_mixed.png' )
     print '[Saved "sol_soft.png".]'
     print '[Saved "sol_hard.png".]'
+    print '[Saved "sol_mixed.png".]'
     #heightmesh.save_grid_as_OBJ( sol_nomask, 'sol_hard.obj' )
 
 def debug_matrix_rank( M ):
