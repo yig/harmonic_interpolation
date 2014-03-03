@@ -1063,11 +1063,6 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
     ## Least squares weight should be non-negative:
     assert w_lsq >= 0.
     
-    tic( 'value constraints hard (fast):' )
-    if len( value_constraints_hard ) > 0:
-        system, rhs = system_and_rhs_with_value_constraints2_multiple_rhs( system, zeros( ( system.shape[0], result_dim ) ), value_constraints_hard, cols )
-    toc()
-    
     tic( 'value constraints soft:' )
     if len( value_constraints_soft ) > 0:
         C, Crhs = gen_constraint_system( rows, cols, value_constraints = value_constraints_soft )
@@ -1081,6 +1076,13 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
         
         del C
         del Crhs
+    toc()
+    
+    ## NOTE: We must set hard constraints *after* we set soft constraints, because
+    ##       the hard constraints set certain rows and columns to identity rows and columns.
+    tic( 'value constraints hard (fast):' )
+    if len( value_constraints_hard ) > 0:
+        system, rhs = system_and_rhs_with_value_constraints2_multiple_rhs( system, zeros( ( system.shape[0], result_dim ) ), value_constraints_hard, cols )
     toc()
     
     toc()
