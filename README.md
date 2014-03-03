@@ -14,7 +14,7 @@ It calls `recovery.solve_grid_linear()`.
 (It relies on lots of external helper function to load its input, which isn't necessary.)
 
 To smooth bumps created by normals constraints, try calling
-`recovery.smooth_bumps()` with the locations of the bumps and
+`recovery.smooth_bumps()` or `recovery.smooth_bumps2()` with the locations of the bumps and
 some integer value for bump_radius.
 
 
