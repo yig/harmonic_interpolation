@@ -1019,10 +1019,12 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
     Given dimensions of a 'rows' by 'cols' 2D grid,
     a sequence 'value_constraints_hard' of tuples ( i, j, [ value1, value2, ... ] ) specifying the n-dimensional values of grid[ i,j ] as a hard constraint,
     a sequence 'value_constraints_soft' of tuples ( i, j, [ value1, value2, ... ] ) specifying the n-dimensional values of grid[ i,j ] as a soft (least squares) constraint,
+    a parameter for the weight of all soft constraints 'w_lsq',
     returns the solution to the laplace equation on the domain given by 'mesh'
     with values given by 'value_constraints_hard', 'values_constraints_soft', and 'w_lsq'.
     
     If 'bilaplacian' is true, this will solve bilaplacian f = 0, and boundaries will be reflected.
+    If 'w_lsq' is a sequence instead of a scalar, it must have the same length as 'value_constraints_soft' and will be used to constrain each equation.
     
     tested
     '''
@@ -1031,7 +1033,7 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
         rows, cols,
         len( value_constraints_hard ),
         len( value_constraints_soft ),
-        w_lsq,
+        w_lsq if not hasattr( w_lsq, '__iter__' ) else '%s ...' % w_lsq[:3],
         bilaplacian
         )
     
@@ -1074,8 +1076,25 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
         ## The system to solve:
         ## w_smooth * ( L * grid.ravel() ) + w_gradients * ( C.T * C * grid.ravel() ) = w_gradients * C.T * Crhs
         
-        system = ( system + ( w_lsq * C.T ) * C )
-        rhs = ( rhs + ( w_lsq * C.T ) * Crhs )
+        ## Is w_lsq iterable? If so, then we have a weight per soft constraint equation.
+        if hasattr( w_lsq, '__iter__' ):
+            ## We need to take the square root of w_lsq, because it will be
+            ## the squared when scaling the constraint equations.
+            w_lsq = sqrt( asfarray( w_lsq ) )
+            assert len( w_lsq ) == len( Crhs )
+            
+            from scipy import sparse
+            W = sparse.coo_matrix( ( w_lsq, ( range( len( w_lsq ) ), range( len( w_lsq ) ) ) ) )
+            
+            C = W*C
+            Crhs = W*Crhs
+            
+            system = ( system + C.T*C )
+            rhs = ( rhs + C.T*Crhs )
+            
+        else:
+            system = ( system + ( w_lsq * C.T ) * C )
+            rhs = ( rhs + ( w_lsq * C.T ) * Crhs )
         
         del C
         del Crhs
@@ -1816,7 +1835,14 @@ def test_solve_grid_linear_simple2():
     
     sol_hard = solve_grid_linear_simple2( rows, cols, value_constraints_hard = value_constraints, bilaplacian = True )
     sol_soft = solve_grid_linear_simple2( rows, cols, value_constraints_soft = value_constraints, w_lsq = 1e3, bilaplacian = True )
+    sol_soft2 = solve_grid_linear_simple2( rows, cols, value_constraints_soft = value_constraints, w_lsq = [1e3]*len(value_constraints), bilaplacian = True )
+    #print 'maximum absolute difference for sol_soft when using a per-equation constraint:', abs( sol_soft2 - sol_soft ).max()
+    assert abs( sol_soft2 - sol_soft ).max() < 1e-7
+    
     sol_mixed = solve_grid_linear_simple2( rows, cols, value_constraints_hard = value_constraints, value_constraints_soft = [ ( (br0+br1)//2, (bc0+bc1)//2, [.5*br0]*K ) ], w_lsq = 1e3, bilaplacian = True )
+    sol_mixed2 = solve_grid_linear_simple2( rows, cols, value_constraints_hard = value_constraints, value_constraints_soft = [ ( (br0+br1)//2, (bc0+bc1)//2, [.5*br0]*K ) ], w_lsq = [1e3]*1, bilaplacian = True )
+    #print 'maximum absolute difference for sol_mixed when using a per-equation constraint:', abs( sol_mixed2 - sol_mixed ).max()
+    assert abs( sol_mixed2 - sol_mixed ).max() < 1e-7
     
     Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_hard.png' )
     Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_soft.png' )
