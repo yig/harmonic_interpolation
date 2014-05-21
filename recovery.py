@@ -1202,11 +1202,16 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
 def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], value_constraints_soft = [], w_lsq = 1., bilaplacian = False ):
     '''
     Given dimensions of a 'rows' by 'cols' 2D grid,
-    a sequence 'value_constraints_hard' of tuples ( i, j ) specifying grid[ i,j ] as a hard constraint,
-    a sequence 'value_constraints_soft' of tuples ( i, j ) specifying grid[ i,j ] as a soft (least squares) constraint,
+    a sequence 'value_constraints_hard' of tuples ( i, j ) specifying grid[ i,j ] as a hard constraint (NOTE: no values),
+    a sequence 'value_constraints_soft' of tuples ( i, j ) specifying grid[ i,j ] as a soft (least squares) constraint (NOTE: no values),
     a parameter for the weight of all soft constraints 'w_lsq',
-    returns the solution to the laplace equation on the domain given by 'mesh'
-    with values given by 'value_constraints_hard', 'values_constraints_soft', and 'w_lsq'.
+    returns a function solve( hard_values = [], soft_values = [] ) that can be used to efficiently
+    compute multiple solutions to the laplace equation on the domain given by 'mesh' with different values
+    for the constrained grid locations specified by 'value_constraints_hard' and 'value_constraints_soft'.
+    The 'hard_values' and 'soft_values' parameters to the returned solve() function
+    must have the same length as the 'value_constraints_hard' and 'value_constraints_soft' parameters.
+    Each element of 'hard_values' is the value for the grid location specified by the corresponding element of 'value_constraints_hard'.
+    Each element of 'soft_values' is the value for the grid location specified by the corresponding element of 'value_constraints_soft'.
     
     If 'bilaplacian' is true, this will solve bilaplacian f = 0, and boundaries will be reflected.
     If 'w_lsq' is a sequence instead of a scalar, it must have the same length as 'value_constraints_soft' and will be used to constrain each equation.
