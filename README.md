@@ -30,6 +30,6 @@ To replace pixels in an image whose opacity is not 100% with a harmonic function
 ## Dependencies
 
 * Python >= 2.6 and < 3
-* PIL (Python Image Library)
+* PIL (Python Image Library) (only needed for the examples and tests)
 * scipy
 * cvxopt
