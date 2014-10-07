@@ -1199,7 +1199,7 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
     
     return result
 
-def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], value_constraints_soft = [], w_lsq = 1., bilaplacian = False ):
+def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], value_constraints_soft = [], w_lsq = 1., cut_edges = None, bilaplacian = False ):
     '''
     Given dimensions of a 'rows' by 'cols' 2D grid,
     a sequence 'value_constraints_hard' of tuples ( i, j ) specifying grid[ i,j ] as a hard constraint (NOTE: no values),
@@ -1216,10 +1216,21 @@ def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], v
     If 'bilaplacian' is true, this will solve bilaplacian f = 0, and boundaries will be reflected.
     If 'w_lsq' is a sequence instead of a scalar, it must have the same length as 'value_constraints_soft' and will be used to constrain each equation.
     
+    Optional parameter 'cut_edges' specifies edges that should be disconnected
+    in the laplacian/bilaplacian system.  The parameter must be in the format
+    suitable for passing to 'gen_symmetric_grid_laplacian().'
+    The returned solution is almost guaranteed to be discontinuous across the edges.
+    The convenience function 'cut_edges_from_mask()' can be used to create
+    the 'cut_edges' parameter from a mask.
+    To allow derivative discontinuity but still require connectedness across edges,
+    places those edges into 'dx_constraints' and 'dy_constraints' with
+    constraint value 0.  The convenience function
+    'zero_dx_dy_constraints_from_cut_edges()' can be used for this.
+    
     tested
     '''
     
-    print 'solve_grid_linear_simple2( rows = %s, cols = %s, |hard constraints| = %s, |soft constraints| = %s, w_lsq = %s, bilaplacian = %s )' % (
+    print 'solve_grid_linear_simple3( rows = %s, cols = %s, |hard constraints| = %s, |soft constraints| = %s, w_lsq = %s, bilaplacian = %s )' % (
         rows, cols,
         len( value_constraints_hard ),
         len( value_constraints_soft ),
@@ -1232,10 +1243,10 @@ def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], v
     
     ## Bi-Laplacian instead of Laplacian.
     if bilaplacian:
-        L = gen_grid_laplacian2_with_boundary_reflection( rows, cols )
+        L = gen_grid_laplacian2_with_boundary_reflection( rows, cols, cut_edges )
         L = L.T*L
     else:
-        L = gen_symmetric_grid_laplacian( rows, cols )
+        L = gen_symmetric_grid_laplacian( rows, cols, cut_edges )
     
     toc()
     tic( 'add constraints:' )
@@ -1323,11 +1334,11 @@ def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], v
     
     return solve
 
-def solve_grid_linear_simple3( rows, cols, value_constraints_hard = [], value_constraints_soft = [], w_lsq = 1., bilaplacian = False ):
+def solve_grid_linear_simple3( rows, cols, value_constraints_hard = [], value_constraints_soft = [], w_lsq = 1., cut_edges = None, bilaplacian = False ):
     '''
     Identical to solve_grid_linear_simple2(), except uses solve_grid_linear_simple3_solver() to create a solve() function that can be used repeatedly.
     '''
-    solve = solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [ (i,j) for i,j,val in value_constraints_hard ], value_constraints_soft = [ (i,j) for i,j,val in value_constraints_soft ], w_lsq = w_lsq, bilaplacian = bilaplacian )
+    solve = solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [ (i,j) for i,j,val in value_constraints_hard ], value_constraints_soft = [ (i,j) for i,j,val in value_constraints_soft ], w_lsq = w_lsq, cut_edges = cut_edges, bilaplacian = bilaplacian )
     result = solve( hard_values = [ val for i,j,val in value_constraints_hard ], soft_values = [ val for i,j,val in value_constraints_soft ] )
     return result
 
@@ -2024,24 +2035,35 @@ def test_solve_grid_linear_simpleN( solve_grid_linear_simpleN ):
     else:
         raise RuntimeError, "what"
     
+    test_cut_edges = True
+    
     import Image
     import heightmesh
     
     ## This works with K = 1 or K = 3.
     K = 1
     value_constraints = [
-        ( 0, 0, [0.]*K ), ( rows-1, 0, [0.]*K ), ( 0, cols-1, [0.]*K ), ( rows-1, cols-1, [0.]*K ),
+        ## Put a high value in the upper-left corner if we're testing cut edges
+        ( 0, 0, [br0*2. if test_cut_edegs else 0.]*K ), ( rows-1, 0, [0.]*K ), ( 0, cols-1, [0.]*K ), ( rows-1, cols-1, [0.]*K ),
         ( br0, bc0, [br0]*K ), ( br1-1, bc0, [br0]*K ), ( br0, bc1-1, [br0]*K ), ( br1-1, bc1-1, [br0]*K )
         ]
     
-    sol_hard = solve_grid_linear_simpleN( rows, cols, value_constraints_hard = value_constraints, bilaplacian = True )
-    sol_soft = solve_grid_linear_simpleN( rows, cols, value_constraints_soft = value_constraints, w_lsq = 1e3, bilaplacian = True )
-    sol_soft2 = solve_grid_linear_simpleN( rows, cols, value_constraints_soft = value_constraints, w_lsq = [1e3]*len(value_constraints), bilaplacian = True )
+    if test_cut_edges:
+        mask = zeros( ( rows, cols ), dtype = bool )
+        mask[br0:br1,bc0:bc1] = True
+        
+        cut_edges = cut_edges_from_mask( mask )
+    else:
+        cut_edges = None
+    
+    sol_hard = solve_grid_linear_simpleN( rows, cols, value_constraints_hard = value_constraints, cut_edges = cut_edges, bilaplacian = True )
+    sol_soft = solve_grid_linear_simpleN( rows, cols, value_constraints_soft = value_constraints, w_lsq = 1e3, cut_edges = cut_edges, bilaplacian = True )
+    sol_soft2 = solve_grid_linear_simpleN( rows, cols, value_constraints_soft = value_constraints, w_lsq = [1e3]*len(value_constraints), cut_edges = cut_edges, bilaplacian = True )
     #print 'maximum absolute difference for sol_soft when using a per-equation constraint:', abs( sol_soft2 - sol_soft ).max()
     assert abs( sol_soft2 - sol_soft ).max() < 1e-7
     
-    sol_mixed = solve_grid_linear_simpleN( rows, cols, value_constraints_hard = value_constraints, value_constraints_soft = [ ( (br0+br1)//2, (bc0+bc1)//2, [.5*br0]*K ) ], w_lsq = 1e3, bilaplacian = True )
-    sol_mixed2 = solve_grid_linear_simpleN( rows, cols, value_constraints_hard = value_constraints, value_constraints_soft = [ ( (br0+br1)//2, (bc0+bc1)//2, [.5*br0]*K ) ], w_lsq = [1e3]*1, bilaplacian = True )
+    sol_mixed = solve_grid_linear_simpleN( rows, cols, value_constraints_hard = value_constraints, value_constraints_soft = [ ( (br0+br1)//2, (bc0+bc1)//2, [.5*br0]*K ) ], w_lsq = 1e3, cut_edges = cut_edges, bilaplacian = True )
+    sol_mixed2 = solve_grid_linear_simpleN( rows, cols, value_constraints_hard = value_constraints, value_constraints_soft = [ ( (br0+br1)//2, (bc0+bc1)//2, [.5*br0]*K ) ], w_lsq = [1e3]*1, cut_edges = cut_edges, bilaplacian = True )
     #print 'maximum absolute difference for sol_mixed when using a per-equation constraint:', abs( sol_mixed2 - sol_mixed ).max()
     assert abs( sol_mixed2 - sol_mixed ).max() < 1e-7
     

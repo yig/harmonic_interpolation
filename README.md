@@ -1,10 +1,10 @@
-## For diffusing scalar values with hard and soft constraints
+## For diffusing scalar values with hard and soft constraints and possibly disconnected (cut) edges
 
-Call `recovery.solve_grid_linear_simple2()`.
-You can look at `recovery.test_solve_grid_linear_simple2()` for an example.
+Call `recovery.solve_grid_linear_simple3()` or `recovery.solve_grid_linear_simple3_solver()`.
+You can look at `recovery.test_solve_grid_linear_simpleN()` for an example.
 If you run
     `python recovery.py`
-it will call solve_grid_linear_simple2() and generate test output.
+it will call solve_grid_linear_simple3() and generate test output.
 
 
 ## For recovering a height field
