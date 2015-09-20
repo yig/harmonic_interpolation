@@ -47,6 +47,16 @@ def solve_poisson_simple( target_gradients, linear_constraints = None, linear_co
     ## Build the gradient and laplacian operators.
     G = gradient_operator( rows, cols, mask = mask )
     L = G.T*G
+    
+    ## TODO: A mass matrix.
+    # print( L.diagonal() )
+    ## One over mass
+    # ooMass = scipy.sparse.identity( L.shape[0] )
+    # ooMass.setdiag( 1./sqrt(L.diagonal()) )
+    # G = G*ooMass
+    # L = G.T*G
+    # print( L.diagonal() )
+    
     if bilaplacian:
         G = G*L
         L = L.T*L
@@ -297,11 +307,13 @@ def test_poisson_simple():
     
     sol = solve_poisson_simple( target_gradients, linear_constraints = linear_constraints, linear_constraints_weight = 1e5, mask = mask, bilaplacian = test_bilaplacian )
     
+    name = 'sol_poisson-%smask%s' % ( '' if test_mask else 'no', '-bilaplacian' if test_bilaplacian else '' )
+    
     from PIL import Image
-    Image.fromarray( normalize_to_char_array( sol ) ).save( 'sol_poisson.png' )
-    print( '[Saved "sol_poisson.png".]' )
+    Image.fromarray( normalize_to_char_array( sol ) ).save( name + '.png' )
+    print( '[Saved "%s.png".]' % name )
     # import heightmesh
-    # heightmesh.save_grid_as_OBJ( sol, 'sol_poisson.obj' )
+    # heightmesh.save_grid_as_OBJ( sol, name + '.obj' )
     
     # from pprint import pprint
     # print( sol )
