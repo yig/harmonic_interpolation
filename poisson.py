@@ -50,11 +50,6 @@ def gradient_operator( rows, cols, mask = None ):
     ijs = array( ijs, dtype = int )
     G = scipy.sparse.coo_matrix( ( vals, ijs.T ), shape = ( rows*cols*2, rows*cols ) ).tocsr()
     
-    ## Normalize by the mass
-    ooMass = scipy.sparse.identity( rows*cols )
-    ooMass.setdiag( 1./asarray([ ( val if val != 0 else 1. ) for val in -G.diagonal() ]) )
-    G = ooMass * G
-    
     return G
 
 def generate_constraint_matrix( rows, cols, linear_constraints ):
@@ -122,7 +117,7 @@ def solve_poisson_simple( rows, cols, target_gradients, linear_constraints = Non
     L = G.T*G
     
     system = L
-    rhs = G.T * target_gradients.reshape( rows*cols, -1 )
+    rhs = G.T * target_gradients.reshape( rows*cols*2, -1 )
     
     if linear_constraints is not None and len( linear_constraints ) > 0:
         C, Crhs = generate_constraint_matrix( rows, cols, linear_constraints )
@@ -135,7 +130,7 @@ def solve_poisson_simple( rows, cols, target_gradients, linear_constraints = Non
     return x.reshape( rows, cols, -1 )
 
 def test_poisson_simple():
-    what = 'small'
+    what = 'large'
     if what == 'large':
         rows = 250
         cols = 250
@@ -153,13 +148,13 @@ def test_poisson_simple():
     else:
         raise RuntimeError, "what"
     
-    test_cut_edges = False
+    test_mask = True
     
     ## This works with K = 1 or K = 3.
     K = 1
     linear_constraints = [
         ## Put a high value in the upper-left corner if we're testing cut edges
-        ( [ ( 0, 0, 1. ) ], [br0*2. if test_cut_edges else 0.]*K ),
+        ( [ ( 0, 0, 1. ) ], [br0*2. if test_mask else 0.]*K ),
         ( [ ( rows-1, 0, 1. ) ], [0.]*K ),
         ( [ ( 0, cols-1, 1. ) ], [0.]*K ),
         ( [ ( rows-1, cols-1, 1. ) ], [0.]*K ),
@@ -169,7 +164,7 @@ def test_poisson_simple():
         ( [ ( br1-1, bc1-1, 1. ) ], [br0]*K )
         ]
     
-    if test_cut_edges:
+    if test_mask:
         mask = zeros( ( rows, cols ), dtype = bool )
         mask[br0:br1,bc0:bc1] = True
     else:
