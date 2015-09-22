@@ -3,13 +3,14 @@ from __future__ import print_function, division
 from numpy import *
 import scipy.sparse.linalg
 
-def solve_poisson_simple( target_gradients, linear_constraints = None, linear_constraints_weight = None, mask = None, bilaplacian = False ):
+def solve_poisson_simple( target_gradients, linear_constraints = None, linear_constraints_weight = None, mask = None, mask_value = None, bilaplacian = False ):
     '''
     Given a rows-by-cols-by-2-by-k array of target gradient values at each k-dimensional element of the grid `target_gradients` in the i and j directions,
     and optional parameters:
         `linear_constraints`: a sequence of ( [ row, col, coeff ], rhs ) representing linear equation constraints,
         `linear_constraints_weight`: a single weight value for all of the constraints,
         `mask`: a rows-by-cols boolean array, where False values are ignored in the optimization
+        `mask_value`: a length-k array of the default value to use for masked elements (default is the zero vector)
     solves the specified poisson equation to obtain an array of rows-by-cols-by-k values
     whose gradients matches the target gradients subject to the optional linear constraints
     and mask as closely as possible.
@@ -36,6 +37,8 @@ def solve_poisson_simple( target_gradients, linear_constraints = None, linear_co
     
     ## If there is a mask, it must have the same first two dimensions.
     assert mask is None or mask.shape == target_gradients.shape[:2]
+    ## If there is a mask value, its dimensions must match the last dimension of target gradients.
+    assert mask_value is None or len( mask_value ) == target_gradients.shape[3]
     
     ## If linear_constraints is not None, then the weight must be given.
     assert ( linear_constraints is None ) or ( linear_constraints_weight is not None )
@@ -63,6 +66,17 @@ def solve_poisson_simple( target_gradients, linear_constraints = None, linear_co
     
     system = L
     rhs = G.T * target_gradients.reshape( rows*cols*2, -1 )
+    
+    if mask is not None:
+        ## Get the default mask value.
+        if mask_value is None:
+            mask_value = zeros( target_gradients.shape[3] )
+        ## Apply the value constraints to masked nodes.
+        system, rhs = system_and_rhs_with_value_constraints2_multiple_rhs(
+            system, rhs,
+            [ ( i,j, mask_value ) for i,j in zip( *where( logical_not( mask ) ) ) ],
+            cols
+            )
     
     ## Add the linear constraints if present.
     if linear_constraints is not None and len( linear_constraints ) > 0:
@@ -187,6 +201,82 @@ def gradient_operator( rows, cols, mask = None ):
     
     return G
 
+def system_and_rhs_with_value_constraints2_multiple_rhs( system, rhs, value_constraints, cols ):
+    '''
+    Given a `system` matrix and `rhs` matrix (the columns of `rhs` are the multiple
+    right-hand sides),
+    a sequence of (i,j,val) constraints `value_constraints`,
+    where node (i,j) should be constrained to have value 'val',
+    and the number of columns in the grid `cols`,
+    returns a modified system and rhs in which False values are constrained to have
+    the value 'mask_value'.
+    
+    Copied from recovery.system_and_rhs_with_value_constraints2_multiple_rhs(),
+    where it is marked:
+    used (successfully by a function that is tested)
+    '''
+    
+    from scipy import sparse
+    
+    ## Now incorporate value_constraints by setting some identity rows and changing the right-hand-side.
+    ## Set constraint rows to identity rows.
+    ## We also zero the columns to keep the matrix symmetric.
+    ## NOTE: We have to update the right-hand-side when we zero the columns.
+    
+    ## There shouldn't be duplicate constraints.
+    assert len( set( [ (i,j) for i, j, val in value_constraints ] ) ) == len( value_constraints )
+    
+    value_constraint_values = asarray([ val for i,j,val in value_constraints ])
+    value_constraint_indices = asarray([ (i,j) for i,j,val in value_constraints ])
+    value_constraint_indices = value_constraint_indices[:,0] * cols + value_constraint_indices[:,1]
+    
+    ## Update the right-hand-side elements wherever a fixed degree-of-freedom
+    ## is involved in a row (the columns of constrained degrees-of-freedom).
+    '''
+    for index, val in zip( value_constraint_values, value_constraint_indices ):
+        rhs -= system.getrow( index ) * val
+    '''
+    #R = sparse.csr_matrix( ( 1, system.shape[0] ) )
+    #for index, val in zip( value_constraint_values, value_constraint_indices ): R[ 0, index ] = val
+    R = sparse.coo_matrix(
+        ## values
+        ( value_constraint_values.T.ravel(),
+        ## row indices are zeros for the zero-th element in each value, ones for the one-th element in each value, and so on.
+        ( repeat( arange( value_constraint_values.shape[1], dtype = value_constraint_indices.dtype ), value_constraint_indices.shape[0] ),
+        ## column indices
+        tile( value_constraint_indices, value_constraint_values.shape[1] ) ) ),
+        ## shape is value_constraint_values.shape[1] x N
+        shape = ( value_constraint_values.shape[1], system.shape[0] )
+        )
+    R = R.tocsr()
+    rhs = rhs - ( R * system ).T
+    rhs = asarray( rhs )
+    
+    ## Set corresponding entries of the right-hand-side vector to the constraint value.
+    #for index, value in value_constraints_dict.iteritems(): rhs[ index ] = value
+    rhs[ value_constraint_indices, : ] = value_constraint_values
+    
+    
+    ## Zero the constrained rows and columns, and set the diagonal to 1.
+    
+    ## Zero the rows and columns.
+    diag = ones( rhs.shape[0] )
+    diag[ value_constraint_indices ] = 0.
+    #D = sparse.identity( system.shape[0] )
+    #D.setdiag( diag )
+    D = sparse.coo_matrix( ( diag, ( arange( system.shape[0] ), arange( system.shape[0] ) ) ) ).tocsr()
+    system = D * system * D
+    
+    ## Set the constraints' diagonals to 1.
+    #diag = zeros( rhs.shape[0] )
+    #diag[ value_constraint_indices ] = 1.
+    #D.setdiag( diag )
+    #D.setdiag( 1. - diag )
+    D = sparse.coo_matrix( ( ones( value_constraint_indices.shape[0] ), ( value_constraint_indices, value_constraint_indices ) ), shape = system.shape )
+    system = system + D
+    
+    return system, rhs
+
 def generate_constraint_matrix( rows, cols, linear_constraints ):
     '''
     Given dimensions of a `rows` by `cols` 2D grid
@@ -272,7 +362,7 @@ def test_poisson_simple():
     else:
         raise RuntimeError, "what"
     
-    test_mask = True
+    test_mask = False
     
     ## This works with K = 1 or K = 3.
     K = 1
@@ -305,7 +395,10 @@ def test_poisson_simple():
     ## With a bilaplacian, it is no longer the poisson equation.
     test_bilaplacian = False
     
-    sol = solve_poisson_simple( target_gradients, linear_constraints = linear_constraints, linear_constraints_weight = 1e5, mask = mask, bilaplacian = test_bilaplacian )
+    # mask_value = None
+    mask_value = [0.]
+    
+    sol = solve_poisson_simple( target_gradients, linear_constraints = linear_constraints, linear_constraints_weight = 1e5, mask = mask, mask_value = mask_value, bilaplacian = test_bilaplacian )
     
     name = 'sol_poisson-%smask%s' % ( '' if test_mask else 'no', '-bilaplacian' if test_bilaplacian else '' )
     
