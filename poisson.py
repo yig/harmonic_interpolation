@@ -10,7 +10,9 @@ def solve_poisson_simple( target_gradients, linear_constraints = None, linear_co
         `linear_constraints`: a sequence of ( [ row, col, coeff ], rhs ) representing linear equation constraints,
         `linear_constraints_weight`: a single weight value for all of the constraints,
         `mask`: a rows-by-cols boolean array, where False values are ignored in the optimization
-        `mask_value`: a length-k array of the default value to use for masked elements (default is the zero vector)
+        `mask_value`: a length-k array representing the value to constrain all masked elements to
+                      (The default is that masked elements are left unconstrained,
+                      which could cause problems if no linear constraints affect the masked values.)
     solves the specified poisson equation to obtain an array of rows-by-cols-by-k values
     whose gradients matches the target gradients subject to the optional linear constraints
     and mask as closely as possible.
@@ -67,11 +69,8 @@ def solve_poisson_simple( target_gradients, linear_constraints = None, linear_co
     system = L
     rhs = G.T * target_gradients.reshape( rows*cols*2, -1 )
     
-    if mask is not None:
-        ## Get the default mask value.
-        if mask_value is None:
-            mask_value = zeros( target_gradients.shape[3] )
-        ## Apply the value constraints to masked nodes.
+    ## Apply the mask value constraints to masked nodes.
+    if mask is not None and mask_value is not None:
         system, rhs = system_and_rhs_with_value_constraints2_multiple_rhs(
             system, rhs,
             [ ( i,j, mask_value ) for i,j in zip( *where( logical_not( mask ) ) ) ],
@@ -362,7 +361,7 @@ def test_poisson_simple():
     else:
         raise RuntimeError, "what"
     
-    test_mask = False
+    test_mask = True
     
     ## This works with K = 1 or K = 3.
     K = 1
