@@ -151,6 +151,56 @@ def normals_to_target_gradients( normals ):
     
     return target_gradients
 
+def shrink( mask, pixel_iterations ):
+    return logical_not( grow( logical_not( mask ), pixel_iterations ) )
+def grow( mask, pixel_iterations ):
+    '''
+    Given a 2D boolean numpy.array 'mask' and number of iterations 'pixel_iterations',
+    Returns a 2D array created by expanding the True area of 'mask' by 'pixel_iterations' pixels.
+    '''
+    
+    assert int( pixel_iterations ) == pixel_iterations
+    assert pixel_iterations >= 0
+    
+    ## Copy the input array.
+    mask = array( mask )
+    ## Smear in x and y over and over; each loop expands the region by one pixel.
+    for i in xrange( pixel_iterations ):
+        '''
+        ## This doesn't work due to aliasing.
+        mask[ :-1, : ] += mask[ 1:, : ]
+        mask[ 1:, : ] += mask[ :-1, : ]
+        mask[ :, :-1 ] += mask[ :, 1: ]
+        mask[ :, 1: ] += mask[ :, :-1 ]
+        '''
+        
+        #'''
+        ## This works, and makes diamond corners.
+        mask_copy = array( mask )
+        mask[ :-1, : ] += mask_copy[ 1:, : ]
+        mask[ 1:, : ] += mask_copy[ :-1, : ]
+        mask[ :, :-1 ] += mask_copy[ :, 1: ]
+        mask[ :, 1: ] += mask_copy[ :, :-1 ]
+        #'''
+        
+        '''
+        ## This works, and makes sharp corners.
+        mask[ :-1, : ] += array( mask[ 1:, : ] )
+        mask[ 1:, : ] += array( mask[ :-1, : ] )
+        mask[ :, :-1 ] += array( mask[ :, 1: ] )
+        mask[ :, 1: ] += array( mask[ :, :-1 ] )
+        '''
+        
+        '''
+        ## This works, and makes sharp corners.
+        mask[ :-1, : ] = mask[ :-d1, : ] + mask[ 1:, : ]
+        mask[ 1:, : ] = mask[ 1:, : ] + mask[ :-1, : ]
+        mask[ :, :-1 ] = mask[ :, :-1 ] + mask[ :, 1: ]
+        mask[ :, 1: ] = mask[ :, 1: ] + mask[ :, :-1 ]
+        '''
+    
+    return mask
+
 def gradient_operator( rows, cols, mask = None ):
     '''
     Given dimensions of a `rows` by `cols` 2D grid,
