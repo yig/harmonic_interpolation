@@ -206,7 +206,7 @@ def coo_diag( vals ):
 def test_against_dirichlet():
     print( '=== test_against_dirichlet() ===' )
 
-    import dirichlet
+    import recovery as dirichlet
     for rows, cols in [ ( 2, 2 ), ( 2, 3 ), ( 3, 2 ), ( 30, 2 ), ( 2, 30 ), ( 3, 3 ), ( 30, 30 ) ]:
         print( rows, 'rows by', cols, 'cols:', abs( dirichlet.gen_symmetric_grid_laplacian2( rows, cols ) - gen_symmetric_grid_laplacian( rows, cols ) ).sum() )
 
