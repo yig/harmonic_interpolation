@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
+from __future__ import print_function, division
+
 from numpy import *
-from itertools import izip as zip
+try: from itertools import izip as zip
+except ImportError: pass
 
 def save_grid_as_OBJ( grid, objpath, four_eight = False, mask = None ):
     mesh = grid2trimesh( grid, four_eight = four_eight, mask = mask )
-    print '[Generated %s triangle mesh.]' % ( 'four-eight' if four_eight else 'regular', )
+    print( '[Generated %s triangle mesh.]' % ( 'four-eight' if four_eight else 'regular', ) )
     mesh.write_OBJ( objpath )
 
 def grid2trimesh( grid, four_eight = False, mask = None ):
@@ -25,21 +28,21 @@ def grid2trimesh( grid, four_eight = False, mask = None ):
         assert mask.shape == grid.shape
         
         #'''
-        print 'Removing masked vertices...'
+        print( 'Removing masked vertices...' )
         remove_vs_indices = [ vi for vi in xrange(len( mesh.vs )) if not mask[ mask.shape[0] - 1 - mesh.vs[vi][1], mesh.vs[vi][0] ] ]
-        #print 'remove_vs_indices:'
-        #print remove_vs_indices
+        #print( 'remove_vs_indices:' )
+        #print( remove_vs_indices )
         mesh.remove_vertex_indices( remove_vs_indices )
-        print 'Finished removing masked vertices.'
+        print( 'Finished removing masked vertices.' )
         '''
         ## Alternative
         def vi_in_mask( vi ): return mask[ mask.shape[0] - 1 - mesh.vs[vi][1], mesh.vs[vi][0] ]
-        print 'Removing faces between masked and unmasked vertices...'
+        print( 'Removing faces between masked and unmasked vertices...' )
         remove_face_indices = [ fi for fi in xrange(len( mesh.faces )) if len(set([ vi_in_mask( vi ) for vi in mesh.faces[fi]])) != 1 ]
-        #print 'remove_face_indices:'
-        #print remove_face_indices
+        #print( 'remove_face_indices:' )
+        #print( remove_face_indices )
         mesh.remove_face_indices( remove_face_indices )
-        print 'Finished removing faces between masked and unmasked vertices.'
+        print( 'Finished removing faces between masked and unmasked vertices.' )
         #'''
     
     return mesh
@@ -133,10 +136,10 @@ def main():
     import sys, os
     
     def usage():
-        print >> sys.stderr, "Usage:", sys.argv[0], 'path/to/2D/grid.npy [--clobber] [--4-8] [--z-scale Z] [--normalize|--one-minus-normalize] [--mask /path/to/mask.png] [output.obj]'
-        print >> sys.stderr, "--z-scale scales the 2D grid values (default 1.0) after the optional normalize step."
-        print >> sys.stderr, "--normalize scales and translates the 2D grid such that the minimum value is 0 and the maximum value is 1."
-        print >> sys.stderr, "--one-minus-normalize is the same as normalize, except that it sets values to one minus the normalized value."
+        print( "Usage:", sys.argv[0], 'path/to/2D/grid.npy [--clobber] [--4-8] [--z-scale Z] [--normalize|--one-minus-normalize] [--mask /path/to/mask.png] [output.obj]', file = sys.stderr )
+        print( "--z-scale scales the 2D grid values (default 1.0) after the optional normalize step.", file = sys.stderr )
+        print( "--normalize scales and translates the 2D grid such that the minimum value is 0 and the maximum value is 1.", file = sys.stderr )
+        print( "--one-minus-normalize is the same as normalize, except that it sets values to one minus the normalized value.", file = sys.stderr )
         sys.exit(-1)
     
     argv = list( sys.argv )
@@ -214,14 +217,14 @@ def main():
         outpath = inpath + '.obj'
     
     if normalize and om_normalize:
-        print >> sys.stderr, "Can't normalize and one-minus-normalize at the same time."
+        print( "Can't normalize and one-minus-normalize at the same time.", file = sys.stderr )
         usage()
     
     if len( argv ) > 0:
         usage()
     
     if not kClobber and os.path.exists( outpath ):
-        print >> sys.stderr, "Output path exists, aborting:", outpath
+        print( "Output path exists, aborting:", outpath, file = sys.stderr )
         sys.exit(-1)
     
     arr = load( inpath )
@@ -251,20 +254,20 @@ def test():
     # import heightmesh
     # heightmesh.test()
     ## or
-    # /usr/bin/python2.5 -c 'import heightmesh; heightmesh.test()'
+    # python -c 'import heightmesh; heightmesh.test()'
     
     grid = ones( (7,5) )
     mesh_nomask = grid2trimesh( grid )
     
     def print_mesh( mesh ):
-        print 'mesh.vs:'
-        print asarray( mesh.vs ).round(2)
-        print 'mesh.uvs:'
-        print asarray( mesh.uvs ).round(2)
-        print 'mesh.faces:'
-        print mesh.faces
+        print( 'mesh.vs:' )
+        print( asarray( mesh.vs ).round(2) )
+        print( 'mesh.uvs:' )
+        print( asarray( mesh.uvs ).round(2) )
+        print( 'mesh.faces:' )
+        print( mesh.faces )
     
-    print 'mesh_nomask:'
+    print( 'mesh_nomask:' )
     print_mesh( mesh_nomask )
     try:
         import trimesh_viewer
@@ -275,11 +278,11 @@ def test():
     mask[3,2] = False
     mask[4,3] = False
     
-    print 'mask:'
-    print mask
+    print( 'mask:' )
+    print( mask )
     
     mesh_mask = grid2trimesh( grid, mask = mask )
-    print 'mesh_mask:'
+    print( 'mesh_mask:' )
     print_mesh( mesh_mask )
     try:
         import trimesh_viewer
