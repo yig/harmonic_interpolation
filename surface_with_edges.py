@@ -1,5 +1,5 @@
 from numpy import *
-import Image
+from PIL import Image
 import recovery
 
 def edge_mask2edges( edge_mask ):

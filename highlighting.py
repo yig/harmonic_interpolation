@@ -8,7 +8,7 @@ def array_outlining_span( img, span, color ):
     and a tuple of three rgb values 'color',
     returns a copy of 'img' with the given region outlined in a border of color 'color'.
     '''
-    import Image, ImageDraw
+    from PIL import Image, ImageDraw
     ## Call img.copy() because I'm not positive that Image.fromarray() makes a copy.
     assert img.dtype == uint8
     #img = asarray( img, dtype = uint8 )
@@ -100,7 +100,7 @@ def array_outlining_region( img, region, color ):
     result = array( img )
     result[ mask ] = color
     
-    #import Image
+    #from PIL import Image
     #Image.fromarray( asarray( result, dtype = uint8 ) ).show()
     #debugger()
     return result
@@ -131,7 +131,7 @@ def array_tinting_region( img, region, color, alpha ):
     ## Blend the area specified by 'region' with 'color' according to 'alpha', linearly.
     result[ region ] = ( img[ region ] + alpha * ( color - img[ region ] ) ).round().astype( uint8 ).clip( 0, 255 )
     
-    #import Image
+    #from PIL import Image
     #Image.fromarray( asarray( result, dtype = uint8 ) ).show()
     #debugger()
     return result
@@ -207,7 +207,7 @@ def array_tinting_region_with_falloff_from_center( img, region, color, alpha ):
         result_slice = result[ crop[0] : crop[1], crop[2] : crop[3] ]
         result_slice[:] = ( result_slice + bump[ kBufferPixels : -kBufferPixels, kBufferPixels : -kBufferPixels, newaxis ] * ( color - result_slice ) ).round().astype( uint8 ).clip( 0, 255 )
     
-    #import Image
+    #from PIL import Image
     #Image.fromarray( asarray( result, dtype = uint8 ) ).show()
     #debugger()
     return result
@@ -282,7 +282,7 @@ def array_outlining_regions_border( img, regions, colors, pixels_from_border = N
         region_mask[ region ] = True
         result[ logical_and( region_mask, step4 ) ] = color
     
-    #import Image
+    #from PIL import Image
     #Image.fromarray( asarray( result, dtype = uint8 ) ).show()
     #debugger()
     return result
@@ -353,7 +353,7 @@ def array_tinting_regions_borders( img, regions, colors, alpha, pixels_from_bord
         del highlighted_region_out[:]
         highlighted_region_out.append( where( step2 ) )
     
-    #import Image
+    #from PIL import Image
     #Image.fromarray( asarray( result, dtype = uint8 ) ).show()
     #debugger()
     return result
@@ -494,7 +494,7 @@ def array_desaturating( img, desaturation ):
     ## Blend the two images according to desaturation.
     result = ( img + desaturation * ( grey - img ) ).round().astype( uint8 ).clip( 0, 255 )
     
-    #import Image
+    #from PIL import Image
     #Image.fromarray( asarray( result, dtype = uint8 ) ).show()
     #debugger()
     return result

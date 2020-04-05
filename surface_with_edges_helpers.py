@@ -1,6 +1,6 @@
 def friendly_Image_open_asarray( filename ):
     from numpy import asarray, uint8
-    import Image
+    from PIL import Image
     img = Image.open( filename )
     ## Merge down to a greyscale (Luminance) image.
     ## UPDATE: Actually, don't do this.  We want to work on a color image!

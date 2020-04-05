@@ -1,5 +1,5 @@
 from numpy import *
-import Image
+from PIL import Image
 from itertools import izip as zip
 from recovery import solve_grid_linear, solve_grid_linear_simple
 

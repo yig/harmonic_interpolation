@@ -191,7 +191,7 @@ def main():
         index = argv.index( '--mask' )
         mask_path = argv[ index+1 ]
         del argv[ index : index+2 ]
-        import Image
+        from PIL import Image
         mask = ( asarray( Image.open( mask_path ).convert('L'), dtype = uint8 ) / 255. ).astype( bool )
         ## This works, but adds dependency on helpers for a one-liner.
         #import helpers
@@ -231,7 +231,7 @@ def main():
     assert len( arr.shape ) == 2
     
     ## Debugging
-    #import Image
+    #from PIL import Image
     #Image.fromarray( asarray( ( 255*( arr - arr.min() ) / ( arr.max() - arr.min() ) ).clip(0,255), dtype = uint8 ) ).show()
     ## Test a simple sin/cos surface.
     #arr = zeros((4,5))

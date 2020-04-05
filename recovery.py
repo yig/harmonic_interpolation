@@ -1973,7 +1973,7 @@ def test_cut_edges():
     dys.extend([ ( row, bc0, 1. ) for row in xrange( br0, br1 ) ])
     dys.extend([ ( row, bc1-2, -1. ) for row in xrange( br0, br1 ) ])
     
-    import Image
+    from PIL import Image
     import heightmesh
     
     sol_tilted = solve_grid_linear( rows, cols, [ ( 0, 0, 1 ) ], [ ( 0, 0, 1 ) ], [ ( 0, 0, 0. ), ( 1, 1, 2. ) ], bilaplacian = True )
@@ -2037,7 +2037,7 @@ def test_solve_grid_linear_simpleN( solve_grid_linear_simpleN ):
     
     test_cut_edges = True
     
-    import Image
+    from PIL import Image
     import heightmesh
     
     ## This works with K = 1 or K = 3.
