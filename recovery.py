@@ -1258,7 +1258,8 @@ def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], v
     assert len( value_constraints_hard ) + len( value_constraints_soft ) > 0
     
     ## Least squares weight should be non-negative:
-    assert w_lsq >= 0.
+    ## UPDATE: This works even if w_lsq is a scalar.
+    assert ( asfarray( w_lsq ) >= 0. ).all()
     
     tic( 'value constraints soft:' )
     if len( value_constraints_soft ) > 0:
@@ -2044,7 +2045,7 @@ def test_solve_grid_linear_simpleN( solve_grid_linear_simpleN ):
     K = 1
     value_constraints = [
         ## Put a high value in the upper-left corner if we're testing cut edges
-        ( 0, 0, [br0*2. if test_cut_edegs else 0.]*K ), ( rows-1, 0, [0.]*K ), ( 0, cols-1, [0.]*K ), ( rows-1, cols-1, [0.]*K ),
+        ( 0, 0, [br0*2. if test_cut_edges else 0.]*K ), ( rows-1, 0, [0.]*K ), ( 0, cols-1, [0.]*K ), ( rows-1, cols-1, [0.]*K ),
         ( br0, bc0, [br0]*K ), ( br1-1, bc0, [br0]*K ), ( br0, bc1-1, [br0]*K ), ( br1-1, bc1-1, [br0]*K )
         ]
     

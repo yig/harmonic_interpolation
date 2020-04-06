@@ -3,7 +3,7 @@
 Call `recovery.solve_grid_linear_simple3()` or `recovery.solve_grid_linear_simple3_solver()`.
 You can look at `recovery.test_solve_grid_linear_simpleN()` for an example.
 If you run
-    `python recovery.py`
+    `python3 recovery.py`
 it will call solve_grid_linear_simple3() and generate test output.
 
 
@@ -22,14 +22,14 @@ some integer value for bump_radius.
 
 To replace pixels in an image whose opacity is not 100% with a harmonic function:
 
-        python fill_alpha_harmonic.py path/to/image_with_non_opaque_pixels.png path/to/output.png
+        python3 fill_alpha_harmonic.py path/to/image_with_non_opaque_pixels.png path/to/output.png
 
 100% opaque pixels remain unchanged.
 
 
 ## Dependencies
 
-* Python >= 2.6 and < 3
-* PIL (Python Image Library) (only needed for the examples and tests)
+* Python >= 3.5
+* Pillow (Python Image Library) (only needed for the examples and tests)
 * scipy
 * cvxopt
