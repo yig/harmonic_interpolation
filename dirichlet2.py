@@ -32,7 +32,7 @@ mask should be True for every grid location we care about (want a solution to).
 skip should be True for every grid location we have a known good value for.
 '''
 
-from __future__ import print_function, division
+
 
 from numpy import *
 from scipy import sparse
@@ -89,8 +89,8 @@ def grad_and_mass( rows, cols, mask = None, skip = None ):
 
     output_row = 0
     ## First make the derivatives in the +row direction.
-    for i in xrange( rows - 1 ):
-        for j in xrange( cols ):
+    for i in range( rows - 1 ):
+        for j in range( cols ):
             ## Skip rows involving masked elements.
             if mask is not None and not ( mask[ i, j ] and mask[ i + 1, j ] ): continue
             if skip is not None and not ( skip[ i, j ] and skip[ i + 1, j ] ):
@@ -117,8 +117,8 @@ def grad_and_mass( rows, cols, mask = None, skip = None ):
 
             output_row += 1
     ## Next make the derivatives in the +col direction.
-    for i in xrange( rows ):
-        for j in xrange( cols - 1 ):
+    for i in range( rows ):
+        for j in range( cols - 1 ):
             ## Skip rows involving masked elements.
             if mask is not None and not ( mask[ i, j ] and mask[ i, j + 1 ] ): continue
             if skip is not None and not ( skip[ i, j ] and skip[ i, j + 1 ] ):

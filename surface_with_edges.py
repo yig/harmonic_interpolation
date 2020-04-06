@@ -135,12 +135,12 @@ def main():
     from unique2centroids import lines2centroids2normals
     row_col2normal = lines2centroids2normals( open( centroids2normals_path ) )
     ## Transpose normal from right, down to row, col.
-    row_col2normal = dict([ ( row_col, ( normal[1], normal[0], normal[2] ) ) for row_col, normal in row_col2normal.iteritems() ])
+    row_col2normal = dict([ ( row_col, ( normal[1], normal[0], normal[2] ) ) for row_col, normal in row_col2normal.items() ])
     
     #normal_constraints = [ ( row, col, normal ) for ( row, col ), normal in row_col2normal.iteritems() ]
     normal_constraints = [
         ( row, col, normal )
-        for ( row, col ), normal in row_col2normal.iteritems()
+        for ( row, col ), normal in row_col2normal.items()
         if not ignore_mask[ row, col ]
         ]
     
@@ -176,17 +176,17 @@ def main():
     ## in case I imported something else with the name 'save'.
     import numpy
     numpy.save( output_npy_path_surface, nmap )
-    print '[Saved surface depth map as a numpy array to "%s".]' % (output_npy_path_surface,)
+    print('[Saved surface depth map as a numpy array to "%s".]' % (output_npy_path_surface,))
     
     nmap_arr = recovery.normalize_to_char_img( nmap )
     nmap_img = Image.fromarray( nmap_arr )
     nmap_img.save( output_image_path_surface )
-    print '[Saved surface depth map as an image to "%s".]' % (output_image_path_surface,)
+    print('[Saved surface depth map as an image to "%s".]' % (output_image_path_surface,))
     nmap_img.show()
     
     import heightmesh
     heightmesh.save_grid_as_OBJ( nmap, output_obj_path_surface, mask = mask )
-    print '../GLUTViewer "%s" "%s"' % ( output_obj_path_surface, image_path )
+    print('../GLUTViewer "%s" "%s"' % ( output_obj_path_surface, image_path ))
     
     #debugger()
     pass

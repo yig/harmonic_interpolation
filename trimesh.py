@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+
 from numpy import *
 
 def mag2( vec ):
@@ -171,7 +171,7 @@ class TriMesh( object ):
         #self.__vertex_normals[ fs[:,2] ] += fns
         import itertools
         for c in (0,1,2):
-            for i, n in itertools.izip( fs[:,c], fns ):
+            for i, n in zip( fs[:,c], fns ):
                 self.__vertex_normals[ i ] += n
         
         self.__vertex_normals /= sqrt( ( self.__vertex_normals**2 ).sum(axis=1) )[:,newaxis]
@@ -229,7 +229,7 @@ class TriMesh( object ):
         #self.__vertex_areas[ fs[:,2] ] += fas
         import itertools
         for c in (0,1,2):
-            for i, area in itertools.izip( fs[:,c], fas ):
+            for i, area in zip( fs[:,c], fas ):
                 self.__vertex_areas[ i ] += area
         
         self.__vertex_areas /= 3.
@@ -398,7 +398,7 @@ class TriMesh( object ):
                 vertex2outgoing_boundary_hei[ he.to_vertex ].remove( outgoing_hei )
                 break
         
-        assert False not in [ 0 == len( out_heis ) for out_heis in vertex2outgoing_boundary_hei.values() ]
+        assert False not in [ 0 == len( out_heis ) for out_heis in list(vertex2outgoing_boundary_hei.values()) ]
     
     def he_index2directed_edge( self, he_index ):
         '''

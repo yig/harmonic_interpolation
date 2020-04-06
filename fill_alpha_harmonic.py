@@ -1,6 +1,6 @@
 from numpy import *
 from PIL import Image
-from itertools import izip as zip
+
 from recovery import solve_grid_linear, solve_grid_linear_simple
 
 def fill_alpha_harmonic( arr, mask ):
@@ -48,11 +48,11 @@ def main():
     import os, sys
     
     def usage():
-        print >> sys.stderr, 'Usage:', sys.argv[0], 'path/to/input_image path/to/output_image'
+        print('Usage:', sys.argv[0], 'path/to/input_image path/to/output_image', file=sys.stderr)
         
-        print >> sys.stderr, 'Replaces pixels whose opacity is not 100% with a harmonic function. 100% opaque pixels remain unchanged.'
-        print >> sys.stderr, 'Example:', sys.argv[0], '"fill_alpha_harmonic-test/test.png" "fill_alpha_harmonic-test/out.png"'
-        print >> sys.stderr, 'NOTE: To verify, use ql "fill_alpha_harmonic-test/"*.png'
+        print('Replaces pixels whose opacity is not 100% with a harmonic function. 100% opaque pixels remain unchanged.', file=sys.stderr)
+        print('Example:', sys.argv[0], '"fill_alpha_harmonic-test/test.png" "fill_alpha_harmonic-test/out.png"', file=sys.stderr)
+        print('NOTE: To verify, use ql "fill_alpha_harmonic-test/"*.png', file=sys.stderr)
         
         sys.exit(-1)
     
@@ -62,21 +62,21 @@ def main():
         usage()
     
     if not os.path.isfile( inpath ):
-        print >> sys.stderr, 'ERROR: Input path does not exist.'
+        print('ERROR: Input path does not exist.', file=sys.stderr)
         usage()
     if os.path.exists( outpath ):
-        print >> sys.stderr, 'ERROR: Output path exists; not clobbering.'
+        print('ERROR: Output path exists; not clobbering.', file=sys.stderr)
         usage()
     
-    print 'Loading input image:', inpath
+    print('Loading input image:', inpath)
     arr = load_img2arr( inpath )
     
-    print 'Filling in non-opaque values...'
+    print('Filling in non-opaque values...')
     result = fill_alpha_harmonic( arr[:,:,:3], ( 255*arr[:,:,3] ).round(0).astype( int ) == 255 )
     result_img = arr2img( result )
     
     result_img.save( outpath )
-    print 'Saved output to:', outpath
+    print('Saved output to:', outpath)
 
 
 ## UPDATE: If I don't encapsulate the test inside a function, I can run this
@@ -96,6 +96,6 @@ if kTest:
     arr = img / 255.
     result = fill_alpha_harmonic( arr[:,:,:3], ( 255*arr[:,:,3] ).round(0).astype( int ) == 255 )
     
-    print allclose( result, arr[:,:,:3] )
+    print(allclose( result, arr[:,:,:3] ))
 else:
     if __name__ == '__main__': main()

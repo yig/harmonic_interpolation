@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import print_function, division
-
 from numpy import *
-try: from itertools import izip as zip
-except ImportError: pass
 
 def save_grid_as_OBJ( grid, objpath, four_eight = False, mask = None ):
     mesh = grid2trimesh( grid, four_eight = four_eight, mask = mask )
@@ -29,7 +25,7 @@ def grid2trimesh( grid, four_eight = False, mask = None ):
         
         #'''
         print( 'Removing masked vertices...' )
-        remove_vs_indices = [ vi for vi in xrange(len( mesh.vs )) if not mask[ mask.shape[0] - 1 - mesh.vs[vi][1], mesh.vs[vi][0] ] ]
+        remove_vs_indices = [ vi for vi in range(len( mesh.vs )) if not mask[ mask.shape[0] - 1 - mesh.vs[vi][1], mesh.vs[vi][0] ] ]
         #print( 'remove_vs_indices:' )
         #print( remove_vs_indices )
         mesh.remove_vertex_indices( remove_vs_indices )

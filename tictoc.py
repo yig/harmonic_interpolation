@@ -4,7 +4,7 @@ starts = []
 
 def tic( msg = None ):
     if msg is not None:
-        print ( '+' * (len( starts )+1) ), msg
+        print(( '+' * (len( starts )+1) ), msg)
     
     starts.append( ( time.clock(), msg ) )
 
@@ -13,9 +13,9 @@ def toc():
     duration = end - starts[-1][0]
     
     if starts[-1][1] is None:
-        print ( '=' * len( starts ) ), 'tictoc():', duration
+        print(( '=' * len( starts ) ), 'tictoc():', duration)
     else:
-        print ( '-' * len( starts ) ), starts[-1][1], duration
+        print(( '-' * len( starts ) ), starts[-1][1], duration)
     
     del starts[-1]
 
@@ -29,7 +29,7 @@ def tictoc( msg = None ):
 def tictoc_dec( func ):
 	
 	def wrapped( *args, **kwargs ):
-		with tictoc( func.func_name ):
+		with tictoc( func.__name__ ):
 			return func( *args, **kwargs )
 	
 	return wrapped

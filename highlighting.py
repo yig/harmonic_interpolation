@@ -1,5 +1,5 @@
 from numpy import *
-from itertools import izip as zip
+
 
 def array_outlining_span( img, span, color ):
     '''
@@ -37,7 +37,7 @@ def grow( mask, pixel_iterations ):
     ## Copy the input array.
     mask = array( mask )
     ## Smear in x and y over and over; each loop expands the region by one pixel.
-    for i in xrange( pixel_iterations ):
+    for i in range( pixel_iterations ):
         '''
         ## This doesn't work due to aliasing.
         mask[ :-1, : ] += mask[ 1:, : ]
@@ -185,7 +185,7 @@ def array_tinting_region_with_falloff_from_center( img, region, color, alpha ):
     ## NOTE: I used to constrain 'rim' to '0' and 'router' to '-1', but that leads to a divide-by-zero
     ##       if the region is one or two pixels wide.
     value_constraints = [ (i,j,1.) for i,j in zip(*where(rim)) ] + [ (i,j,0.) for i,j in zip(*where(router)) ]
-    print 'len( value_constraints ):', len( value_constraints )
+    print('len( value_constraints ):', len( value_constraints ))
     from recovery import solve_grid_linear
     bump = solve_grid_linear( r.shape[0], r.shape[1], bilaplacian = True, value_constraints = value_constraints, iterative = False )
     ## Mask the bump outside the region.

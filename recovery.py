@@ -3,7 +3,7 @@
 from numpy import *
 from math import acos
 import itertools
-from itertools import izip as zip
+
 
 def recovery1( mesh ):
     ## 1 Take only front-facing triangles of the mesh.
@@ -62,7 +62,7 @@ def recovery1( mesh ):
     
     ## Solve for 'output' in-place and return 'output' as well.
     #output = solve_nonlinear( output, [ ( ofi, mesh.face_normals[ mfi ] ) for ofi, mfi in output_face2mesh_face.iteritems() ] )
-    output = solve_linear( output, [ ( ofi, mesh.face_normals[ mfi ] ) for ofi, mfi in output_face2mesh_face.iteritems() ] )
+    output = solve_linear( output, [ ( ofi, mesh.face_normals[ mfi ] ) for ofi, mfi in output_face2mesh_face.items() ] )
     output.write_OBJ( 'output.obj' )
 
 def zero_dx_dy_constraints_from_cut_edges( cut_edges ):
@@ -161,8 +161,8 @@ def gen_symmetric_grid_laplacian1( rows, cols, cut_edges = None ):
         return i*M + j
     
     Adj = []
-    for i in xrange( 0, rows ):
-        for j in xrange( 0, cols ):
+    for i in range( 0, rows ):
+        for j in range( 0, cols ):
             ind00 = ij2ind( i,j )
             
             ## If I wanted to remove these conditionals, I could do
@@ -216,7 +216,7 @@ def gen_symmetric_grid_laplacian1( rows, cols, cut_edges = None ):
     #Mass = sparse.lil_matrix( ( rows*cols, rows*cols ) )
     #Mass.setdiag( asarray(AdjMatrix.sum(1)).ravel() )
     #debugger()
-    Mass = sparse.coo_matrix( ( asarray(AdjMatrix.sum(1)).ravel(), ( range( rows*cols ), range( rows*cols ) ) ) )
+    Mass = sparse.coo_matrix( ( asarray(AdjMatrix.sum(1)).ravel(), ( list(range( rows*cols)), list(range( rows*cols)) ) ) )
     L = .25 * ( Mass - AdjMatrix )
     
     #debugger()
@@ -260,8 +260,8 @@ def gen_symmetric_grid_laplacian2( rows, cols, cut_edges = None ):
     
     ## The middle (lacking the first and last columns) strip down
     ## to the bottom, not including the bottom row.
-    for i in xrange( 0, rows-1 ):
-        for j in xrange( 1, cols-1 ):
+    for i in range( 0, rows-1 ):
+        for j in range( 1, cols-1 ):
             
             ind00 = ij2ind( i,j )
             indp0 = ij2ind( i+1,j )
@@ -270,7 +270,7 @@ def gen_symmetric_grid_laplacian2( rows, cols, cut_edges = None ):
     
     ## The first and last columns down to the bottom,
     ## not including the bottom row.
-    for i in xrange( 0, rows-1 ):
+    for i in range( 0, rows-1 ):
         for j in ( 0, cols-1 ):
             
             ind00 = ij2ind( i,j )
@@ -280,8 +280,8 @@ def gen_symmetric_grid_laplacian2( rows, cols, cut_edges = None ):
     
     ## The middle (lacking the first and last rows) strip to
     ## the right, not including the last column.
-    for i in xrange( 1, rows-1 ):
-        for j in xrange( 0, cols-1 ):
+    for i in range( 1, rows-1 ):
+        for j in range( 0, cols-1 ):
             
             ind00 = ij2ind( i,j )
             ind0p = ij2ind( i,j+1 )
@@ -291,7 +291,7 @@ def gen_symmetric_grid_laplacian2( rows, cols, cut_edges = None ):
     ## The first and last rows over to the right,
     ## not including the right-most column.
     for i in ( 0, rows-1 ):
-        for j in xrange( 0, cols-1 ):
+        for j in range( 0, cols-1 ):
             
             ind00 = ij2ind( i,j )
             ind0p = ij2ind( i,j+1 )
@@ -334,7 +334,7 @@ def gen_symmetric_grid_laplacian2( rows, cols, cut_edges = None ):
     #Mass = sparse.lil_matrix( ( rows*cols, rows*cols ) )
     #Mass.setdiag( asarray(AdjMatrix.sum(1)).ravel() )
     #debugger()
-    Mass = sparse.coo_matrix( ( asarray(AdjMatrix.sum(1)).ravel(), ( range( rows*cols ), range( rows*cols ) ) ) )
+    Mass = sparse.coo_matrix( ( asarray(AdjMatrix.sum(1)).ravel(), ( list(range( rows*cols)), list(range( rows*cols)) ) ) )
     L = ( Mass - AdjMatrix )
     
     ## The rows should sum to 0.
@@ -382,8 +382,8 @@ def gen_grid_laplacian2_with_boundary_reflection( rows, cols, cut_edges = None )
     ##       by reflection.
     
     ## The middle strip down to the bottom, not including the bottom row.
-    for i in xrange( 0, rows-1 ):
-        for j in xrange( 0, cols ):
+    for i in range( 0, rows-1 ):
+        for j in range( 0, cols ):
             
             ind00 = ij2ind( i,j )
             indp0 = ij2ind( i+1,j )
@@ -391,8 +391,8 @@ def gen_grid_laplacian2_with_boundary_reflection( rows, cols, cut_edges = None )
             AdjValues.append( .25 )
     
     ## The middle strip to the right, not including the last column.
-    for i in xrange( 0, rows ):
-        for j in xrange( 0, cols-1 ):
+    for i in range( 0, rows ):
+        for j in range( 0, cols-1 ):
             
             ind00 = ij2ind( i,j )
             ind0p = ij2ind( i,j+1 )
@@ -440,11 +440,11 @@ def gen_grid_laplacian2_with_boundary_reflection( rows, cols, cut_edges = None )
     
     ## We also add "cut_edges" for the grid boundary.
     if rows > 1:
-        for j in xrange( 0, cols ):
+        for j in range( 0, cols ):
             CutAdj.append( ( ij2ind( 0, j ), ij2ind( 1, j ) ) )
             CutAdj.append( ( ij2ind( rows-1, j ), ij2ind( rows-2, j ) ) )
     if cols > 1:
-        for i in xrange( 0, rows ):
+        for i in range( 0, rows ):
             CutAdj.append( ( ij2ind( i, 0 ), ij2ind( i, 1 ) ) )
             CutAdj.append( ( ij2ind( i, cols-1 ), ij2ind( i, cols-2 ) ) )
     
@@ -477,7 +477,7 @@ def gen_grid_laplacian2_with_boundary_reflection( rows, cols, cut_edges = None )
     #Mass = sparse.lil_matrix( ( rows*cols, rows*cols ) )
     #Mass.setdiag( asarray(AdjMatrix.sum(1)).ravel() )
     #debugger()
-    Mass = sparse.coo_matrix( ( asarray(AdjMatrix.sum(1)).ravel(), ( range( rows*cols ), range( rows*cols ) ) ) )
+    Mass = sparse.coo_matrix( ( asarray(AdjMatrix.sum(1)).ravel(), ( list(range( rows*cols)), list(range( rows*cols)) ) ) )
     L = ( Mass - AdjMatrix )
     
     ## The rows should sum to 0.
@@ -617,7 +617,7 @@ def system_and_rhs_with_value_constraints1( system, rhs, value_constraints, cols
     system = system.tocoo()
     
     ## Set corresponding entries of the right-hand-side vector to the constraint value.
-    for index, value in value_constraints_dict.iteritems(): rhs[ index ] = value
+    for index, value in value_constraints_dict.items(): rhs[ index ] = value
     
     ## Update the right-hand-side elements wherever a fixed degree-of-freedom
     ## is involved in a row (the columns of constrained degrees-of-freedom).
@@ -627,7 +627,7 @@ def system_and_rhs_with_value_constraints1( system, rhs, value_constraints, cols
     
     system_vij = [ (val,row,col) for val,row,col in zip( system.data, system.row, system.col ) if row not in value_constraints_dict and col not in value_constraints_dict ]
     ## Then add a 1 along the diagonal.
-    system_vij.extend( [ ( 1., index, index ) for index in value_constraints_dict.iterkeys() ] )
+    system_vij.extend( [ ( 1., index, index ) for index in value_constraints_dict.keys() ] )
     
     toc()
     tic( 'transpose vij:' )
@@ -883,14 +883,14 @@ def solve_grid_linear( rows, cols, dx_constraints = None, dy_constraints = None,
         assert float( w_lsq ) == w_lsq
         w_gradients = float( w_lsq )
     
-    print 'solve_grid_linear( rows = %s, cols = %s, |constraints| = %s, iterative = %s, bilaplacian = %s, |cut_edges| = %s, w_lsq = %s )' % (
+    print('solve_grid_linear( rows = %s, cols = %s, |constraints| = %s, iterative = %s, bilaplacian = %s, |cut_edges| = %s, w_lsq = %s )' % (
         rows, cols,
         len( dx_constraints ) + len( dy_constraints ) + len( value_constraints ),
         iterative,
         bilaplacian,
         len( cut_edges ) if cut_edges is not None else None,
         w_gradients
-        )
+        ))
     
     ## The grid can get large; splitting the building of L and C into seperate functions
     ## means that the temporaries go away as soon as we build the matrices.
@@ -1024,11 +1024,11 @@ def solve_grid_linear_simple( rows, cols, value_constraints, bilaplacian = False
         ])
     '''
     
-    print 'solve_grid_linear_simple( rows = %s, cols = %s, |constraints| = %s, bilaplacian = %s )' % (
+    print('solve_grid_linear_simple( rows = %s, cols = %s, |constraints| = %s, bilaplacian = %s )' % (
         rows, cols,
         len( value_constraints ),
         bilaplacian
-        )
+        ))
     
     from tictoc import tic, toc
     tic( 'build energy:' )
@@ -1102,13 +1102,13 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
     tested
     '''
     
-    print 'solve_grid_linear_simple2( rows = %s, cols = %s, |hard constraints| = %s, |soft constraints| = %s, w_lsq = %s, bilaplacian = %s )' % (
+    print('solve_grid_linear_simple2( rows = %s, cols = %s, |hard constraints| = %s, |soft constraints| = %s, w_lsq = %s, bilaplacian = %s )' % (
         rows, cols,
         len( value_constraints_hard ),
         len( value_constraints_soft ),
         w_lsq if not hasattr( w_lsq, '__iter__' ) else '%s ...' % w_lsq[:3],
         bilaplacian
-        )
+        ))
     
     from tictoc import tic, toc
     tic( 'build energy:' )
@@ -1157,7 +1157,7 @@ def solve_grid_linear_simple2( rows, cols, value_constraints_hard = [], value_co
             w_lsq = w_lsq * ones( len( Crhs ) )
         
         from scipy import sparse
-        W = sparse.coo_matrix( ( w_lsq, ( range( len( w_lsq ) ), range( len( w_lsq ) ) ) ) )
+        W = sparse.coo_matrix( ( w_lsq, ( list(range( len( w_lsq ))), list(range( len( w_lsq ))) ) ) )
         
         CTW = C.T*W
         system = ( system + CTW*C )
@@ -1230,13 +1230,13 @@ def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], v
     tested
     '''
     
-    print 'solve_grid_linear_simple3( rows = %s, cols = %s, |hard constraints| = %s, |soft constraints| = %s, w_lsq = %s, bilaplacian = %s )' % (
+    print('solve_grid_linear_simple3( rows = %s, cols = %s, |hard constraints| = %s, |soft constraints| = %s, w_lsq = %s, bilaplacian = %s )' % (
         rows, cols,
         len( value_constraints_hard ),
         len( value_constraints_soft ),
         w_lsq if not hasattr( w_lsq, '__iter__' ) else '%s ...' % w_lsq[:3],
         bilaplacian
-        )
+        ))
     
     from tictoc import tic, toc
     tic( 'build energy:' )
@@ -1276,7 +1276,7 @@ def solve_grid_linear_simple3_solver( rows, cols, value_constraints_hard = [], v
             w_lsq = w_lsq * ones( len( Crhs ) )
             
         from scipy import sparse
-        W = sparse.coo_matrix( ( w_lsq, ( range( len( w_lsq ) ), range( len( w_lsq ) ) ) ) )
+        W = sparse.coo_matrix( ( w_lsq, ( list(range( len( w_lsq ))), list(range( len( w_lsq ))) ) ) )
         
         CTW = C.T*W
         system = ( system + CTW*C )
@@ -1369,7 +1369,7 @@ def smooth_bumps( grid, bump_locations, bump_radius, **solve_grid_linear_kwargs 
     '''
     
     if 'w_lsq' in solve_grid_linear_kwargs:
-        print "WARNING: parameter 'w_lsq' has no effect smooth_bumps()"
+        print("WARNING: parameter 'w_lsq' has no effect smooth_bumps()")
     
     assert len( grid.shape ) == 2
     assert grid.shape[0] > 0
@@ -1511,7 +1511,7 @@ def smooth_bumps2( grid, bump_locations, bump_radius, smooth_bumps_iterations, s
     
     ### 2
     smooth_func = { 'median': median, 'average': average }[ smooth_func ]
-    for i in xrange( smooth_bumps_iterations ):
+    for i in range( smooth_bumps_iterations ):
         
         ### 2a
         dx_constraints = []
@@ -1588,11 +1588,11 @@ def convert_grid_normal_constraints_to_dx_and_dy_constraints( rows, cols, normal
             if (i,j-1) not in ij2normal:
                 ij2normal[ (i,j-1) ] = normal
         else:
-            raise RuntimeError, "We are only iterating over unsafe indices!"
+            raise RuntimeError("We are only iterating over unsafe indices!")
     
     dx_constraints = []
     dy_constraints = []
-    for ( i, j ), normal in ij2normal.iteritems():
+    for ( i, j ), normal in ij2normal.items():
         ## We will create dx/dy constraints by pretending that there is
         ## a triangle with vertices (i,j), (i+1,j), (i,j+1) whose normal is 'normal'.
         ## The dx constraint will be a constraint on the edge (i,j), (i+1,j),
@@ -1610,7 +1610,7 @@ def convert_grid_normal_constraints_to_dx_and_dy_constraints( rows, cols, normal
         ##         silhouettes, like a normal with a z = 0?
         #assert n[2] > 0
         if n[2] < 1e-5:
-            print 'Silhouette normal!  TODO: Make it a height map discontinuity.  Skipping for now...'
+            print('Silhouette normal!  TODO: Make it a height map discontinuity.  Skipping for now...')
             continue
         
         dx_constraints.append( ( i,j, -n[0]/n[2] ) )
@@ -1621,12 +1621,12 @@ def convert_grid_normal_constraints_to_dx_and_dy_constraints( rows, cols, normal
 def test_grid_poisson():
     #result = solve_grid_linear( 3, 3, [(1,0,1.),(1,1,1.),(1,2,1.)], [(0,1,0.),(1,1,0.),(2,1,0.)] )
     
-    print 'laplacian:'
+    print('laplacian:')
     result = solve_grid_linear( 4, 3, [(1,0,1.),(1,1,1.),(1,2,1.)], [] )
-    print result.round(2)
-    print 'bilaplacian:'
+    print(result.round(2))
+    print('bilaplacian:')
     result = solve_grid_linear( 4, 3, [(1,0,1.),(1,1,1.),(1,2,1.)], [], bilaplacian = True )
-    print result.round(2)
+    print(result.round(2))
     
     #result = solve_grid_linear( 10, 10, [(1,0,1.),(1,1,1.),(1,2,1.)], [] ) #[(0,1,0.),(1,1,0.),(2,1,0.)] )
     #result = solve_grid_linear( 10, 10, [], [] )
@@ -1783,7 +1783,7 @@ def get_E_and_grad_nonlinear( mesh, normal_constraints ):
         
         ## Smoothness term.
         w_smooth = 1.
-        for vi in xrange( len( mesh.vs ) ):
+        for vi in range( len( mesh.vs ) ):
             
             one_ring_indices = mesh.vertex_vertex_neighbors( vi )
             one_ring = [ mesh.vs[ vn ] for vn in one_ring_indices ]
@@ -1826,7 +1826,7 @@ def get_E_and_grad_nonlinear( mesh, normal_constraints ):
         ## Finite differencing
         h = 1e-7
         grad = zeros( len( zs ) )
-        for zi in xrange( len( zs ) ):
+        for zi in range( len( zs ) ):
             old_zi = zs[zi]
             zs[zi] += h
             
@@ -1837,7 +1837,7 @@ def get_E_and_grad_nonlinear( mesh, normal_constraints ):
         grad -= e
         grad *= (1/h)
         
-        print 'e:', e
+        print('e:', e)
         #print 'grad:', grad
         
         return e, list( grad )
@@ -1877,7 +1877,7 @@ def shape_operator_for_2D_points_and_normals( points, normals ):
     dp = points[1:] - points[0]
     dn = normals[1:] - normals[0]
     w = 1. / sqrt( ( dp**2 ).sum(-1) )
-    print 'w:', w
+    print('w:', w)
     
     RHS = asarray( [ outer( wi * ni, pi ) for ( wi, ni, pi ) in zip( w, dn, dp ) ] ).sum(0)
     LHS = asarray( [ outer( wi * pi, pi ) for ( wi, pi ) in zip( w, dp ) ] ).sum(0)
@@ -1889,18 +1889,18 @@ def test_shape_operator():
     ps = [ (0,0), (1,0), (0,1) ]
     ns = [ (0,0,1), (1,0,0), (0,1,0) ]
     M = shape_operator_for_2D_points_and_normals( ps, ns )
-    print 'ps:', ps
-    print 'ns:', ns
-    print M
+    print('ps:', ps)
+    print('ns:', ns)
+    print(M)
     ps = asarray( ps )
     ns = asarray( ns )
     Mns = ns[0] + dot( M, ( ps[1:] - ps[0] ).T ).T
-    print 'ns[0] + dot( M, ps[1:] - ps[0] ):', Mns
-    print 'ns[1:] - Mns.T:', ns[1:] - Mns
+    print('ns[0] + dot( M, ps[1:] - ps[0] ):', Mns)
+    print('ns[1:] - Mns.T:', ns[1:] - Mns)
     u, s, vh = linalg.svd( M )
-    print 'u:', u
-    print 's:', s
-    print 'vh:', vh
+    print('u:', u)
+    print('s:', s)
+    print('vh:', vh)
     #debugger()
     #pass
 
@@ -1957,7 +1957,7 @@ def test_cut_edges():
         bc0 = br0
         bc1 = br1
     else:
-        raise RuntimeError, "what"
+        raise RuntimeError("what")
     
     mask = zeros( ( rows, cols ), dtype = bool )
     mask[br0:br1,bc0:bc1] = True
@@ -1966,24 +1966,24 @@ def test_cut_edges():
     
     ## Make the center a raised bump
     dxs = []
-    dxs.extend([ ( br0, col, 1. ) for col in xrange( bc0, bc1 ) ])
-    dxs.extend([ ( br1-2, col, -1. ) for col in xrange( bc0, bc1 ) ])
+    dxs.extend([ ( br0, col, 1. ) for col in range( bc0, bc1 ) ])
+    dxs.extend([ ( br1-2, col, -1. ) for col in range( bc0, bc1 ) ])
     
     dys = []
-    dys.extend([ ( row, bc0, 1. ) for row in xrange( br0, br1 ) ])
-    dys.extend([ ( row, bc1-2, -1. ) for row in xrange( br0, br1 ) ])
+    dys.extend([ ( row, bc0, 1. ) for row in range( br0, br1 ) ])
+    dys.extend([ ( row, bc1-2, -1. ) for row in range( br0, br1 ) ])
     
     from PIL import Image
     import heightmesh
     
     sol_tilted = solve_grid_linear( rows, cols, [ ( 0, 0, 1 ) ], [ ( 0, 0, 1 ) ], [ ( 0, 0, 0. ), ( 1, 1, 2. ) ], bilaplacian = True )
     Image.fromarray( normalize_to_char_img( sol_tilted ) ).save( 'sol_tilted.png' )
-    print '[Saved "sol_tilted.png".]'
+    print('[Saved "sol_tilted.png".]')
     heightmesh.save_grid_as_OBJ( sol_tilted, 'sol_tilted.obj' )
     
     sol_nomask = solve_grid_linear( rows, cols, dxs, dys, [ ( 0, 0, 0. ), ( rows-1, 0, 0. ), ( 0, cols-1, 0. ), ( rows-1, cols-1, 0. ), ], bilaplacian = True )
     Image.fromarray( normalize_to_char_img( sol_nomask ) ).save( 'sol_nomask.png' )
-    print '[Saved "sol_nomask.png".]'
+    print('[Saved "sol_nomask.png".]')
     heightmesh.save_grid_as_OBJ( sol_nomask, 'sol_nomask.obj' )
     
     sol_mask = solve_grid_linear( rows, cols, dxs, dys, [
@@ -1991,7 +1991,7 @@ def test_cut_edges():
         ( br0, bc0, br0 ), #( br1-1, bc0, br0 ), ( br0, bc1-1, br0 ), ( br1-1, bc1-1, br0 )
         ], bilaplacian = True, cut_edges = cut_edges )
     Image.fromarray( normalize_to_char_img( sol_mask ) ).save( 'sol_mask.png' )
-    print '[Saved "sol_mask.png".]'
+    print('[Saved "sol_mask.png".]')
     heightmesh.save_grid_as_OBJ( sol_mask, 'sol_mask.obj' )
     
     sol_mask_tilted = solve_grid_linear( rows, cols, dxs + [ ( 0, 0, 1 ) ], dys + [ ( 0, 0, 1 ) ],
@@ -2001,7 +2001,7 @@ def test_cut_edges():
             #( 0, 0, 0. ), ( br0, bc0, 1. )
         ], bilaplacian = True, cut_edges = cut_edges )
     Image.fromarray( normalize_to_char_img( sol_mask_tilted ) ).save( 'sol_mask_tilted.png' )
-    print '[Saved "sol_mask_tilted.png".]'
+    print('[Saved "sol_mask_tilted.png".]')
     heightmesh.save_grid_as_OBJ( sol_mask_tilted, 'sol_mask_tilted.obj' )
     
     connected_dx, connected_dy = zero_dx_dy_constraints_from_cut_edges( cut_edges )
@@ -2013,7 +2013,7 @@ def test_cut_edges():
             #( 0, 0, 0. ), ( br0, bc0, 1. )
         ], bilaplacian = True, cut_edges = cut_edges )
     Image.fromarray( normalize_to_char_img( sol_mask_tilted_connected ) ).save( 'sol_mask_tilted_connected.png' )
-    print '[Saved "sol_mask_tilted_connected.png".]'
+    print('[Saved "sol_mask_tilted_connected.png".]')
     heightmesh.save_grid_as_OBJ( sol_mask_tilted_connected, 'sol_mask_tilted_connected.obj' )
 
 def test_solve_grid_linear_simpleN( solve_grid_linear_simpleN ):
@@ -2033,7 +2033,7 @@ def test_solve_grid_linear_simpleN( solve_grid_linear_simpleN ):
         bc0 = br0
         bc1 = br1
     else:
-        raise RuntimeError, "what"
+        raise RuntimeError("what")
     
     test_cut_edges = True
     
@@ -2070,13 +2070,13 @@ def test_solve_grid_linear_simpleN( solve_grid_linear_simpleN ):
     Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_hard.png' )
     Image.fromarray( normalize_to_char_img( sol_hard ) ).save( 'sol_soft.png' )
     Image.fromarray( normalize_to_char_img( sol_mixed ) ).save( 'sol_mixed.png' )
-    print '[Saved "sol_soft.png".]'
-    print '[Saved "sol_hard.png".]'
-    print '[Saved "sol_mixed.png".]'
+    print('[Saved "sol_soft.png".]')
+    print('[Saved "sol_hard.png".]')
+    print('[Saved "sol_mixed.png".]')
     #heightmesh.save_grid_as_OBJ( sol_nomask, 'sol_hard.obj' )
 
 def debug_matrix_rank( M ):
-    print linalg.svd( M.todense() )[1] > 1e-10
+    print(linalg.svd( M.todense() )[1] > 1e-10)
 def view_grid( grid ):
     '''
     A helper function for viewing the grid.
@@ -2090,7 +2090,7 @@ def view_grid( grid ):
         import heightmesh, trimesh_viewer
         trimesh_viewer.view_mesh( heightmesh.grid2trimesh( grid ), 'grid' )
     except ImportError:
-        print "Can't use view_grid() because some modules are missing."
+        print("Can't use view_grid() because some modules are missing.")
 
 def main():
     import sys

@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+
 
 from numpy import *
 import scipy.sparse.linalg
@@ -165,7 +165,7 @@ def grow( mask, pixel_iterations ):
     ## Copy the input array.
     mask = array( mask )
     ## Smear in x and y over and over; each loop expands the region by one pixel.
-    for i in xrange( pixel_iterations ):
+    for i in range( pixel_iterations ):
         '''
         ## This doesn't work due to aliasing.
         mask[ :-1, : ] += mask[ 1:, : ]
@@ -409,7 +409,7 @@ def test_poisson_simple():
         bc0 = br0
         bc1 = br1
     else:
-        raise RuntimeError, "what"
+        raise RuntimeError("what")
     
     test_mask = True
     
